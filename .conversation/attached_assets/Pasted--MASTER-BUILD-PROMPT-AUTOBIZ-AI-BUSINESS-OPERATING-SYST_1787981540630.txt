@@ -1,0 +1,1751 @@
+# MASTER BUILD PROMPT — AUTOBIZ AI BUSINESS OPERATING SYSTEM
+
+You are a senior full-stack SaaS architect, product engineer, UI/UX designer, database architect, security engineer, and AI agent engineer.
+
+Build a complete, scalable SaaS platform called **AutoBiz**.
+
+## 1. PRODUCT VISION
+
+AutoBiz is an AI-powered Business Operating System for small and medium-sized businesses.
+
+It should help a business owner manage:
+
+* Business information
+* Products
+* Categories
+* Inventory
+* Customers
+* Suppliers
+* Sales
+* Payments
+* Expenses
+* Invoices
+* Reports
+* Business analytics
+* AI business assistant
+* Notifications
+* Employees and permissions
+
+The key differentiator is the AI assistant.
+
+AutoBiz AI must NOT be a simple FAQ chatbot.
+
+It must understand natural, incomplete, informal, typo-filled, multilingual and Hinglish/Marathi/English user inputs, identify the user's intent, understand conversation context, retrieve relevant business data, perform calculations/analysis, and provide useful business insights.
+
+The long-term goal is:
+
+DATA → UNDERSTANDING → ANALYSIS → INSIGHT → RECOMMENDATION → APPROVED ACTION
+
+---
+
+# 2. IMPORTANT DEVELOPMENT PRINCIPLES
+
+Build this as a real SaaS product, not as a demo.
+
+Requirements:
+
+* Clean architecture
+* Modular code
+* TypeScript
+* Strong validation
+* Secure authentication
+* Multi-tenant data isolation
+* Role-based authorization
+* Production-ready API structure
+* Responsive UI
+* Reusable components
+* Proper error handling
+* Loading states
+* Empty states
+* Database migrations
+* Environment variables
+* No hardcoded secrets
+* No fake business data in production logic
+* No unnecessary complexity
+* Keep the architecture easy to extend
+
+Do not create a monolithic file containing the entire application.
+
+Do not duplicate business logic between frontend and backend.
+
+Do not bypass backend authorization from the frontend.
+
+---
+
+# 3. TECHNOLOGY STACK
+
+## Frontend
+
+Use:
+
+* React
+* Vite
+* TypeScript
+* Tailwind CSS
+* Radix UI or shadcn-style accessible components
+* React Query / TanStack Query
+* React Hook Form
+* Zod
+* Lucide icons
+
+Create a professional SaaS dashboard.
+
+## Backend
+
+Use:
+
+* Node.js
+* Express
+* TypeScript
+* REST API
+* Zod validation
+* JWT authentication
+* bcrypt/argon2 for password hashing
+
+## Database
+
+Use:
+
+* PostgreSQL
+* Drizzle ORM
+* Drizzle migrations
+
+The database must be designed for multi-tenant SaaS.
+
+## Deployment
+
+Keep the application compatible with:
+
+* Replit during development
+* GitHub for source control
+* Vercel or equivalent for frontend deployment
+* Render or equivalent for backend deployment
+* Neon PostgreSQL
+
+Do not tightly couple the application to Replit-specific runtime features.
+
+---
+
+# 4. BRAND
+
+Product name:
+
+AutoBiz
+
+Tagline:
+
+"Run your business. Understand your numbers. Grow faster."
+
+Create a modern professional visual identity.
+
+The design should feel:
+
+* Trustworthy
+* Modern
+* Simple
+* Professional
+* Business-focused
+* AI-powered without looking gimmicky
+
+Avoid excessive gradients, excessive animations and childish UI.
+
+Use responsive design for:
+
+* Desktop
+* Tablet
+* Mobile
+
+---
+
+# 5. USER ROLES
+
+Implement these roles:
+
+## ADMIN
+
+Platform administrator.
+
+Can manage:
+
+* Businesses
+* Users
+* Plans
+* Subscriptions
+* Platform analytics
+* System configuration
+
+## BUSINESS_OWNER
+
+Can manage the entire business.
+
+## STORE_OPERATOR
+
+Can perform operational tasks according to assigned permissions.
+
+Examples:
+
+* Create sales
+* Add customers
+* Update inventory
+* View products
+
+But should not automatically have access to:
+
+* Subscription management
+* Business ownership settings
+* Sensitive financial administration
+
+## CUSTOMER
+
+Design the architecture for a future customer-facing experience, but do NOT build a full marketplace in MVP.
+
+---
+
+# 6. AUTHENTICATION
+
+Implement:
+
+* Registration
+* Login
+* Logout
+* Forgot password
+* Reset password
+* Password hashing
+* JWT access tokens
+* Refresh token strategy
+* Email verification architecture
+* Session handling
+* Protected routes
+* Role-based access control
+
+Authentication must be secure.
+
+Never store plain-text passwords.
+
+---
+
+# 7. ONBOARDING FLOW
+
+New user flow:
+
+Landing Page
+→ Sign Up
+→ Verify Account
+→ Create Business
+→ Select Business Type
+→ Add First Category
+→ Add First Products
+→ Add Opening Stock
+→ Dashboard
+
+Allow business types such as:
+
+* Furniture Hardware
+* Hardware
+* Electrical
+* Plumbing
+* Auto Parts
+* Mobile Accessories
+* Retail
+* Distributor
+* General Business
+* Other
+
+The architecture must allow new business types later.
+
+---
+
+# 8. MULTI-TENANCY
+
+This is extremely important.
+
+AutoBiz is a multi-tenant SaaS.
+
+Business A must NEVER be able to access Business B's data.
+
+All business-owned records must be associated with a business_id.
+
+Examples:
+
+* products.business_id
+* customers.business_id
+* suppliers.business_id
+* sales.business_id
+* expenses.business_id
+* inventory_transactions.business_id
+
+Every backend query must enforce tenant isolation.
+
+Do NOT rely only on frontend filtering.
+
+Use authenticated user context to determine the business.
+
+Implement reusable authorization/tenant middleware.
+
+---
+
+# 9. DATABASE TABLES
+
+Create a clean relational schema.
+
+Core tables:
+
+users
+businesses
+business_users
+roles
+permissions
+role_permissions
+
+categories
+products
+product_images
+
+inventory_transactions
+
+customers
+customer_transactions
+
+suppliers
+supplier_transactions
+
+sales
+sale_items
+
+payments
+
+expenses
+expense_categories
+
+invoices
+invoice_items
+
+notifications
+
+assistants
+assistant_conversations
+assistant_messages
+
+ai_tool_calls
+ai_usage
+
+subscriptions
+plans
+
+audit_logs
+
+Create appropriate:
+
+* Primary keys
+* Foreign keys
+* Unique constraints
+* Indexes
+* Timestamps
+* Status fields
+* Soft-delete strategy where appropriate
+
+Use UUIDs if appropriate for the architecture.
+
+---
+
+# 10. PRODUCT MANAGEMENT
+
+Product fields should support:
+
+* Name
+* SKU
+* Category
+* Brand
+* Description
+* Purchase price
+* Selling price
+* Minimum selling price
+* Current stock
+* Minimum stock
+* Unit
+* Tax
+* Status
+* Product image
+* Created date
+* Updated date
+
+Features:
+
+* Create product
+* Edit product
+* Delete/deactivate product
+* Search
+* Filter
+* Sort
+* Pagination
+* Category management
+* SKU management
+* Product images
+
+---
+
+# 11. INVENTORY
+
+Implement inventory transactions instead of simply changing stock without history.
+
+Support:
+
+* Opening stock
+* Purchase
+* Sale
+* Stock adjustment
+* Damage
+* Return
+* Manual correction
+
+Maintain an inventory ledger.
+
+Example:
+
+Product stock:
+
+Opening:
+100
+
+Sale:
+-20
+
+Purchase:
++50
+
+Damage:
+-5
+
+Current:
+125
+
+Create low-stock detection.
+
+Low stock condition:
+
+current_stock <= minimum_stock
+
+---
+
+# 12. CUSTOMER MANAGEMENT
+
+Customer fields:
+
+* Name
+* Phone
+* Email
+* Address
+* GST information if applicable
+* Credit limit
+* Notes
+* Status
+
+Features:
+
+* Customer list
+* Customer profile
+* Purchase history
+* Payment history
+* Pending balance
+* Total purchases
+* Customer transaction history
+
+---
+
+# 13. SUPPLIER MANAGEMENT
+
+Supplier fields:
+
+* Name
+* Company
+* Phone
+* Email
+* Address
+* GST information
+* Notes
+
+Track:
+
+* Purchases
+* Amount payable
+* Payments
+* Transaction history
+
+---
+
+# 14. SALES MODULE
+
+Create a complete sales flow:
+
+Create Sale
+→ Select Customer
+→ Add Products
+→ Quantity
+→ Price
+→ Discount
+→ Tax
+→ Payment
+→ Generate Invoice
+→ Update Inventory
+→ Update Customer Balance
+
+A sale must correctly affect:
+
+* Inventory
+* Revenue
+* Customer balance
+* Payment records
+* Profit calculations
+
+Use database transactions so partial updates do not occur.
+
+---
+
+# 15. PAYMENTS
+
+Support:
+
+* Cash
+* UPI
+* Bank transfer
+* Card
+* Other
+
+Track:
+
+* Paid amount
+* Due amount
+* Payment date
+* Payment method
+* Reference number
+* Notes
+
+Support partial payments.
+
+---
+
+# 16. EXPENSE MANAGEMENT
+
+Categories:
+
+* Rent
+* Electricity
+* Salary
+* Transport
+* Purchase
+* Maintenance
+* Marketing
+* Other
+
+Features:
+
+* Add expense
+* Edit expense
+* Delete/deactivate expense
+* Filter by date
+* Filter by category
+* Expense reports
+
+---
+
+# 17. INVOICING
+
+Generate professional invoices.
+
+Invoice should contain:
+
+* Business information
+* Customer information
+* Invoice number
+* Date
+* Products
+* Quantity
+* Price
+* Discount
+* Tax
+* Total
+* Paid amount
+* Due amount
+
+Design the architecture so PDF invoice generation can be added cleanly.
+
+---
+
+# 18. DASHBOARD
+
+Create a professional business dashboard.
+
+Show:
+
+Today's Sales
+Today's Expenses
+Today's Profit
+
+Monthly Sales
+Monthly Expenses
+Monthly Profit
+
+Pending Customer Payments
+
+Supplier Payables
+
+Low Stock Products
+
+Total Products
+
+Total Customers
+
+Total Sales
+
+Charts:
+
+* Sales trend
+* Profit trend
+* Expense breakdown
+* Top products
+* Top customers
+
+Allow date-range filtering.
+
+---
+
+# 19. REPORTING ENGINE
+
+Create report APIs and UI for:
+
+Sales reports
+Expense reports
+Profit reports
+Inventory reports
+Customer reports
+Supplier reports
+Payment reports
+
+Support:
+
+* Daily
+* Weekly
+* Monthly
+* Yearly
+* Custom date range
+
+Prepare architecture for:
+
+* CSV export
+* Excel export
+* PDF export
+
+---
+
+# 20. PROFIT CALCULATION
+
+Do not treat total sales as profit.
+
+Implement proper calculations.
+
+Basic concept:
+
+Revenue
+
+* Cost of Goods Sold
+  = Gross Profit
+
+Gross Profit
+
+* Operating Expenses
+  = Net Operating Profit
+
+Make the calculation logic reusable and testable.
+
+---
+
+# 21. AI BUSINESS ASSISTANT — MOST IMPORTANT FEATURE
+
+Do NOT build a FAQ-only chatbot.
+
+The AI must work as a context-aware business assistant.
+
+The AI should understand:
+
+* Natural language
+* Informal language
+* Typos
+* Abbreviations
+* Marathi
+* Hinglish
+* English
+* Mixed-language messages
+* Incomplete sentences
+* Follow-up questions
+* Conversation context
+
+Examples:
+
+"kal chi sale kiti?"
+
+"कालची sale किती?"
+
+"yesterday business kiti zala?"
+
+"kal kiti vikri zali?"
+
+These should map to the same business intent:
+
+GET_SALES_FOR_DATE
+
+---
+
+# 22. AI INTENT ENGINE
+
+Create an AI orchestration layer.
+
+Possible intents:
+
+GET_SALES
+GET_EXPENSES
+GET_PROFIT
+GET_INVENTORY
+GET_LOW_STOCK
+GET_CUSTOMER_BALANCE
+GET_SUPPLIER_BALANCE
+GET_TOP_PRODUCTS
+GET_TOP_CUSTOMERS
+COMPARE_PERIODS
+ANALYZE_PROFIT
+ANALYZE_SALES
+CREATE_RESTOCK_LIST
+CREATE_PAYMENT_REMINDER
+SEARCH_CUSTOMER
+SEARCH_PRODUCT
+BUSINESS_SUMMARY
+
+Design this system so new intents can be added easily.
+
+Do not hardcode every possible sentence.
+
+---
+
+# 23. AI DATA ACCESS
+
+The LLM must NOT have unrestricted direct database access.
+
+Use a controlled tool/function architecture.
+
+Example:
+
+User:
+"mala ya month chi sale sang"
+
+AI
+→ identify intent
+
+Intent:
+GET_MONTHLY_SALES
+
+AI tool:
+get_sales_summary()
+
+Backend:
+perform authorized database query
+
+Result:
+
+{
+totalSales: 482500,
+previousMonthSales: 425000,
+growthPercentage: 13.53
+}
+
+Then LLM generates the natural-language response.
+
+---
+
+# 24. AI TOOL LAYER
+
+Create tools such as:
+
+get_sales_summary
+get_expense_summary
+get_profit_summary
+get_inventory_status
+get_low_stock_products
+get_customer_balance
+get_supplier_balance
+get_top_products
+get_top_customers
+compare_business_periods
+analyze_profit
+search_customers
+search_products
+
+Every tool must:
+
+1. Validate input
+2. Verify authenticated user
+3. Verify business_id
+4. Apply tenant isolation
+5. Query database safely
+6. Return structured data
+7. Never expose unauthorized information
+
+---
+
+# 25. CONVERSATION MEMORY
+
+AI must understand follow-up questions.
+
+Example:
+
+User:
+"माझी या महिन्याची sale किती?"
+
+AI:
+"या महिन्यात तुमची sale ₹4.82 लाख आहे."
+
+User:
+"आणि मागच्या महिन्यात?"
+
+AI:
+"मागच्या महिन्यात ₹4.25 लाख होती."
+
+User:
+"फरक?"
+
+AI:
+"तुमची sale ₹57,500 ने वाढली आहे, म्हणजे 13.53% growth."
+
+Implement conversation context.
+
+Do not blindly send the entire conversation history forever.
+
+Use a controlled context window and structured conversation state.
+
+---
+
+# 26. AMBIGUOUS QUESTIONS
+
+The AI must NOT hallucinate when the question is ambiguous.
+
+Example:
+
+User:
+"रामचे पैसे किती?"
+
+Suppose there is:
+
+Customer:
+Ram
+Receivable:
+₹15,000
+
+Supplier:
+Ram Traders
+Payable:
+₹22,000
+
+The AI should ask:
+
+"तुम्ही customer Ram कडून घ्यायचे ₹15,000 विचारत आहात की Ram Traders ला द्यायचे ₹22,000?"
+
+The AI must ask clarification when required.
+
+---
+
+# 27. TYPO AND IMPERFECT INPUT HANDLING
+
+Examples:
+
+"mzi sale kiti"
+"mazi sal kiti"
+"kalchi sel"
+"profit kiti ahe re"
+"mala paisa kuth ataklay"
+
+The AI should infer meaning from context.
+
+Do not depend on exact keyword matching.
+
+Use an LLM-based intent understanding layer.
+
+---
+
+# 28. BUSINESS REASONING
+
+The AI should not only retrieve numbers.
+
+It should analyze them.
+
+Example:
+
+User:
+"sale vadhli pan profit ka kami zala?"
+
+The system should retrieve:
+
+* Current revenue
+* Previous revenue
+* COGS
+* Discounts
+* Expenses
+* Profit margin
+
+Then reason over structured data.
+
+Possible answer:
+
+"तुमची sales वाढली आहे, पण purchase cost आणि discount वाढल्यामुळे profit margin कमी झाला आहे."
+
+Important:
+
+Never invent numerical facts.
+
+Only use actual retrieved business data.
+
+---
+
+# 29. AI RECOMMENDATIONS
+
+Create a recommendation layer.
+
+Examples:
+
+"Which products should I restock?"
+
+AI analyzes:
+
+* Current stock
+* Minimum stock
+* Recent sales
+* Sales velocity
+* Historical demand
+
+Then produces a recommendation.
+
+Example:
+
+"4 products need attention."
+
+Do NOT claim certainty about future demand.
+
+Use wording such as:
+
+"Based on recent sales..."
+
+---
+
+# 30. AI ACTIONS
+
+Future-ready architecture for AI actions.
+
+Examples:
+
+"Rahul la payment reminder banav."
+
+"Low stock products chi list banav."
+
+"Supplier sathi purchase draft banav."
+
+Actions that change data or contact external systems must require confirmation.
+
+Example:
+
+AI:
+"I prepared a ₹24,500 restock draft. Would you like me to save it?"
+
+Only perform mutation after explicit confirmation.
+
+---
+
+# 31. AI PROVIDER ARCHITECTURE
+
+Do not hardcode one AI provider throughout the application.
+
+Create an abstraction such as:
+
+AIProvider
+→ generateResponse()
+→ understandIntent()
+→ generateStructuredOutput()
+
+This will allow switching between AI providers later.
+
+Use environment variables for API keys.
+
+Never expose AI API keys to the frontend.
+
+---
+
+# 32. AI KNOWLEDGE / FAQ
+
+FAQ is NOT the main AI system.
+
+FAQ can be used as one knowledge source.
+
+Architecture:
+
+Business Data
++
+Business Documentation / FAQ
++
+Conversation Context
++
+Analytics
++
+AI reasoning
+
+The AI should prioritize real business data when answering business questions.
+
+---
+
+# 33. AI CHAT UI
+
+Create a polished chat interface.
+
+Features:
+
+* Message bubbles
+* Loading indicator
+* Streaming-ready architecture
+* Conversation history
+* Suggested questions
+* Error states
+* Retry
+* Clear conversation
+* Mobile responsive
+
+Suggested prompts:
+
+"आजची sale किती?"
+"माझा profit कसा आहे?"
+"कोणाकडून पैसे घ्यायचे आहेत?"
+"कुठले products low stock आहेत?"
+"मागच्या महिन्यापेक्षा business कसा आहे?"
+
+---
+
+# 34. NOTIFICATIONS
+
+Implement:
+
+* Low stock notifications
+* Payment due notifications
+* Daily summary
+* Monthly summary
+* Subscription notifications
+
+Design notification service so email/WhatsApp/SMS can be integrated later.
+
+---
+
+# 35. ADMIN PANEL
+
+Create an admin dashboard.
+
+Admin can see:
+
+* Total businesses
+* Active businesses
+* Total users
+* Subscription plans
+* Revenue metrics
+* AI usage
+* System health
+
+Admin must NOT accidentally bypass tenant isolation through normal business APIs.
+
+Create separate admin authorization.
+
+---
+
+# 36. SUBSCRIPTION SYSTEM
+
+Prepare SaaS plans:
+
+FREE
+STARTER
+BUSINESS
+PRO
+
+Example limits:
+
+FREE:
+1 business
+100 products
+100 customers
+Basic reports
+
+STARTER:
+Unlimited products
+Unlimited customers
+Sales
+Inventory
+Expenses
+Invoices
+Advanced reports
+
+BUSINESS:
+AI Assistant
+Advanced analytics
+Employee accounts
+Automation
+
+PRO:
+Multiple stores
+Advanced AI
+Advanced permissions
+Forecasting
+Priority support
+
+Implement plan/feature entitlement architecture.
+
+Do not hardcode plan checks throughout the application.
+
+Create a reusable feature/usage service.
+
+---
+
+# 37. SECURITY
+
+Implement:
+
+* Password hashing
+* JWT
+* Refresh token security
+* RBAC
+* Tenant isolation
+* Input validation
+* SQL injection prevention
+* Rate limiting
+* CORS
+* Secure headers
+* Environment variables
+* Audit logging
+* Error handling
+* Request validation
+
+Never return stack traces or secrets to users.
+
+---
+
+# 38. AUDIT LOG
+
+Track important actions:
+
+* Login
+* Product creation
+* Product update
+* Sale creation
+* Payment
+* Expense creation
+* Customer update
+* AI action
+* Permission changes
+
+Store:
+
+* user_id
+* business_id
+* action
+* entity
+* entity_id
+* timestamp
+* metadata
+
+---
+
+# 39. API ARCHITECTURE
+
+Use:
+
+/api/v1/auth
+/api/v1/businesses
+/api/v1/users
+/api/v1/products
+/api/v1/categories
+/api/v1/inventory
+/api/v1/customers
+/api/v1/suppliers
+/api/v1/sales
+/api/v1/payments
+/api/v1/expenses
+/api/v1/invoices
+/api/v1/reports
+/api/v1/notifications
+/api/v1/assistant
+/api/v1/subscriptions
+/api/v1/admin
+
+Use consistent:
+
+* HTTP status codes
+* Error response structure
+* Validation
+* Pagination
+* Filtering
+* Sorting
+
+---
+
+# 40. FRONTEND STRUCTURE
+
+Use feature-based organization.
+
+Example:
+
+src/
+
+components/
+features/
+pages/
+layouts/
+hooks/
+services/
+api/
+types/
+utils/
+lib/
+
+Feature modules:
+
+auth
+business
+products
+inventory
+customers
+suppliers
+sales
+payments
+expenses
+invoices
+reports
+assistant
+notifications
+subscriptions
+
+---
+
+# 41. BACKEND STRUCTURE
+
+Use modular architecture.
+
+src/
+
+config/
+middleware/
+modules/
+db/
+routes/
+services/
+utils/
+types/
+
+modules:
+
+auth/
+business/
+users/
+products/
+inventory/
+customers/
+suppliers/
+sales/
+payments/
+expenses/
+invoices/
+reports/
+assistant/
+notifications/
+subscriptions/
+admin/
+
+Each module should separate:
+
+* Routes
+* Controller
+* Service
+* Validation
+* Database queries/repository
+
+---
+
+# 42. ERROR HANDLING
+
+Create centralized error handling.
+
+Frontend should show friendly messages.
+
+Backend should log technical errors securely.
+
+Example API error:
+
+{
+"success": false,
+"error": {
+"code": "PRODUCT_NOT_FOUND",
+"message": "Product not found"
+}
+}
+
+Do not expose database internals.
+
+---
+
+# 43. TESTING
+
+Create tests for critical business logic.
+
+At minimum:
+
+* Authentication
+* Authorization
+* Tenant isolation
+* Product creation
+* Inventory calculation
+* Sale creation
+* Payment calculation
+* Profit calculation
+* Customer balance
+* AI tool authorization
+
+Especially test:
+
+Business A cannot access Business B data.
+
+---
+
+# 44. SEED DATA
+
+Create development seed data.
+
+Include one demo business:
+
+"Demo Furniture Hardware"
+
+Include realistic:
+
+* Products
+* Categories
+* Customers
+* Suppliers
+* Sales
+* Expenses
+* Inventory
+
+Clearly separate seed/demo data from production.
+
+---
+
+# 45. UI PAGES
+
+Create:
+
+Public:
+
+/
+/pricing
+/login
+/register
+/forgot-password
+
+Application:
+
+/dashboard
+/products
+/inventory
+/customers
+/suppliers
+/sales
+/payments
+/expenses
+/invoices
+/reports
+/assistant
+/notifications
+/settings
+
+Admin:
+
+/admin
+/admin/businesses
+/admin/users
+/admin/subscriptions
+/admin/analytics
+
+---
+
+# 46. DASHBOARD SIDEBAR
+
+Use:
+
+Dashboard
+Products
+Inventory
+Sales
+Customers
+Suppliers
+Expenses
+Invoices
+Reports
+AI Assistant
+Notifications
+Settings
+
+At bottom:
+
+Business selector
+User profile
+Logout
+
+---
+
+# 47. UX REQUIREMENTS
+
+Every page must include:
+
+* Loading state
+* Empty state
+* Error state
+* Search where useful
+* Pagination where needed
+* Confirmation for destructive actions
+* Toast notifications
+* Responsive layout
+
+Do not create unnecessary popups.
+
+Use accessible forms.
+
+---
+
+# 48. RESPONSIVE DESIGN
+
+Desktop:
+
+Full sidebar + dashboard.
+
+Tablet:
+
+Collapsible sidebar.
+
+Mobile:
+
+Bottom navigation or mobile sidebar.
+
+The AI assistant must work especially well on mobile.
+
+---
+
+# 49. PERFORMANCE
+
+Use:
+
+* Pagination
+* Database indexes
+* Efficient queries
+* React Query caching
+* Lazy loading where appropriate
+* Debounced search
+* Avoid unnecessary API calls
+
+Do not load the entire database into the frontend.
+
+---
+
+# 50. ENVIRONMENT VARIABLES
+
+Create a safe .env.example.
+
+Possible variables:
+
+DATABASE_URL=
+JWT_SECRET=
+JWT_REFRESH_SECRET=
+AI_API_KEY=
+AI_MODEL=
+FRONTEND_URL=
+BACKEND_URL=
+
+Never commit real secrets.
+
+Add .env to .gitignore.
+
+---
+
+# 51. DOCUMENTATION
+
+Create:
+
+README.md
+
+docs/
+
+architecture.md
+database.md
+api.md
+ai-architecture.md
+deployment.md
+security.md
+roadmap.md
+
+README should explain:
+
+* Product
+* Features
+* Tech stack
+* Local setup
+* Environment variables
+* Database migration
+* Seed commands
+* Development commands
+* Deployment
+
+---
+
+# 52. GITHUB READINESS
+
+The project must be GitHub-ready.
+
+Create:
+
+.gitignore
+.env.example
+README.md
+
+Use meaningful commit-friendly structure.
+
+Do not include:
+
+* Secrets
+* API keys
+* node_modules
+* Build artifacts
+* Temporary files
+
+---
+
+# 53. MVP PRIORITY
+
+Do NOT spend excessive time building future marketplace functionality.
+
+Prioritize:
+
+1. Authentication
+2. Business
+3. Roles
+4. Products
+5. Inventory
+6. Customers
+7. Suppliers
+8. Sales
+9. Payments
+10. Expenses
+11. Dashboard
+12. Reports
+13. AI Assistant
+14. Notifications
+15. Subscription architecture
+
+Marketplace/customer app is future scope.
+
+---
+
+# 54. DEVELOPMENT STRATEGY
+
+Build in logical phases.
+
+PHASE 1:
+Project foundation
+Authentication
+Database
+Business
+RBAC
+
+PHASE 2:
+Products
+Categories
+Inventory
+
+PHASE 3:
+Customers
+Suppliers
+Sales
+Payments
+
+PHASE 4:
+Expenses
+Invoices
+Dashboard
+Reports
+
+PHASE 5:
+AI Assistant
+AI tools
+Intent understanding
+Conversation context
+Business reasoning
+
+PHASE 6:
+Notifications
+Subscriptions
+Admin
+
+PHASE 7:
+Testing
+Security
+Performance
+Deployment preparation
+
+Do not leave the application in a broken intermediate state.
+
+After each major phase, ensure the application still runs.
+
+---
+
+# 55. AI IMPLEMENTATION PRIORITY
+
+For the first working AI version, implement these capabilities:
+
+1. Sales questions
+2. Expense questions
+3. Profit questions
+4. Inventory questions
+5. Low-stock questions
+6. Customer balance
+7. Supplier balance
+8. Top products
+9. Period comparison
+10. Business summary
+
+Then add recommendations.
+
+Then add approved actions.
+
+---
+
+# 56. IMPORTANT AI RULES
+
+The AI must:
+
+* Understand imperfect language
+* Use conversation context
+* Ask clarification when ambiguous
+* Never invent business numbers
+* Never access another business's data
+* Never expose private data
+* Never directly execute dangerous mutations without confirmation
+* Clearly distinguish facts from recommendations
+* Base numerical answers on actual database results
+* Handle Marathi/Hinglish/English naturally
+
+If the system does not have enough information:
+
+Say that the information is unavailable instead of hallucinating.
+
+---
+
+# 57. EXAMPLE AI CONVERSATIONS
+
+Example 1:
+
+User:
+"kalchi sale kiti?"
+
+AI:
+"काल तुमची total sale ₹32,450 होती."
+
+Example 2:
+
+User:
+"mzi sale vadhli pn profit ka kami?"
+
+AI:
+"तुमची sales वाढली आहेत, पण purchase cost आणि discounts वाढल्यामुळे profit margin कमी झाला आहे."
+
+Example 3:
+
+User:
+"mala konache paise ghyayche ahet?"
+
+AI:
+"सध्या 7 customers कडून एकूण ₹84,500 येणे बाकी आहे."
+
+Example 4:
+
+User:
+"ram che paise?"
+
+If ambiguous:
+
+"तुम्ही customer Ram कडून येणे बाकी असलेले पैसे विचारत आहात की Ram Traders ला द्यायची रक्कम?"
+
+Example 5:
+
+User:
+"stock bagh"
+
+AI:
+"तुमच्याकडे सध्या 5 products minimum stock level खाली आहेत."
+
+---
+
+# 58. DO NOT BUILD A FAKE AI
+
+Do not create an AI UI that simply returns hardcoded answers.
+
+The AI must connect to actual backend tools and real database data.
+
+Do not use fake responses such as:
+
+"Your business is doing great!"
+
+unless the system actually has data supporting that statement.
+
+---
+
+# 59. FINAL QUALITY REQUIREMENT
+
+Before considering the build complete, verify:
+
+* Application starts successfully
+* Database connects
+* Migrations work
+* Authentication works
+* Protected routes work
+* RBAC works
+* Tenant isolation works
+* CRUD operations work
+* Sales update inventory
+* Payments update balances
+* Expenses affect profit calculations
+* Dashboard displays real database data
+* Reports use real data
+* AI assistant uses real tools
+* AI respects business_id
+* Ambiguous AI questions trigger clarification
+* Environment variables are documented
+* No secrets are committed
+* README is complete
+* Project is GitHub-ready
+
+---
+
+# 60. FIRST TASK
+
+Before writing large amounts of code:
+
+1. Analyze the complete requirements.
+2. Create the project structure.
+3. Create the database schema.
+4. Create the architecture.
+5. Create the initial implementation plan.
+6. Then implement the MVP in phases.
+
+If the environment already contains an AutoBiz project, inspect the existing code first.
+
+Reuse working code where appropriate, but refactor inconsistent architecture instead of blindly duplicating it.
+
+Do not delete working functionality without a reason.
+
+At the end of each phase, verify that the application builds and runs.
+
+Build AutoBiz as a serious SaaS product that can eventually serve thousands of businesses.

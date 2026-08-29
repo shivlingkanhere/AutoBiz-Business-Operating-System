@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AutoBiz"
+description = "An AI-powered business operating system for small and medium-sized businesses to manage products, inventory, customers, sales, finances, and business insights in one place."
+version = "1.0.0"
+id = "artifacts/autobiz"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19358
+
+[services.development]
+run = "pnpm --filter @workspace/autobiz run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/autobiz", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/autobiz/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19358"
+BASE_PATH = "/"
