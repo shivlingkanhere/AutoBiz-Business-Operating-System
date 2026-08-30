@@ -5,7 +5,11 @@
  * AutoBiz business operating system API
  * OpenAPI spec version: 0.1.0
  */
+import type { Customer } from './customer';
 
-export interface HealthStatus {
-  status: string;
+export interface CustomerPage {
+  items: Customer[];
+  total: number;
+  page: number;
+  pageSize: number;
 }

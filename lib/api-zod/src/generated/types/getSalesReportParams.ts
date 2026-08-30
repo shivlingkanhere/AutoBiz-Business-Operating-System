@@ -5,7 +5,8 @@
  * AutoBiz business operating system API
  * OpenAPI spec version: 0.1.0
  */
+import type { GetSalesReportRange } from './getSalesReportRange';
 
-export interface HealthStatus {
-  status: string;
-}
+export type GetSalesReportParams = {
+range?: GetSalesReportRange;
+};
