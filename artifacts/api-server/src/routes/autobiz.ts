@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request } from "express";
 import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
 import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions/completions";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
 import {
@@ -34,9 +35,50 @@ const router: IRouter = Router();
 const demoBusinessId = "00000000-0000-0000-0000-000000000001";
 
 type BusinessRequest = Request & { businessId?: string };
+type ConversationMessage = Extract<ChatCompletionMessageParam, { role: "user" | "assistant" }>;
+type ConversationState = {
+  businessId: string;
+  messages: ConversationMessage[];
+  updatedAt: number;
+};
+
+const conversations = new Map<string, ConversationState>();
+const conversationTtlMs = 1000 * 60 * 60 * 4;
+const maxConversationMessages = 20;
+
+const faqKnowledge = [
+  {
+    id: "return-policy-availability",
+    keywords: ["return policy", "returns", "refund", "exchange"],
+    answer: "No return or refund policy is configured in this AutoBiz workspace.",
+  },
+  {
+    id: "assistant-scope",
+    keywords: ["what can you do", "what do you know", "help me", "capabilities"],
+    answer: "AutoBiz can explain the connected business data and help with general business planning, sales, marketing, inventory, and operational decisions.",
+  },
+];
 
 const money = (value: string | number | null | undefined) => Number(value ?? 0);
 const iso = (value: Date | null | undefined) => value?.toISOString() ?? null;
+
+function getRelevantFaqs(message: string) {
+  const normalized = message.toLowerCase();
+  return faqKnowledge.filter((entry) => entry.keywords.some((keyword) => normalized.includes(keyword)));
+}
+
+function getConversation(businessId: string, conversationId: string) {
+  const key = `${businessId}:${conversationId}`;
+  const existing = conversations.get(key);
+  if (existing && Date.now() - existing.updatedAt < conversationTtlMs) return { key, state: existing };
+  const state: ConversationState = { businessId, messages: [], updatedAt: Date.now() };
+  conversations.set(key, state);
+  if (conversations.size > 200) {
+    const oldest = [...conversations.entries()].sort((a, b) => a[1].updatedAt - b[1].updatedAt)[0];
+    if (oldest) conversations.delete(oldest[0]);
+  }
+  return { key, state };
+}
 
 async function getBusinessId(req: Request): Promise<string> {
   const { userId } = getAuth(req);
@@ -333,22 +375,89 @@ router.post("/assistant/chat", async (req, res): Promise<void> => {
   const businessId = await businessContext(req);
   const parsed = SendAssistantMessageBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [summary] = await Promise.all([
-    db.select().from(salesTable).where(eq(salesTable.businessId, businessId)),
+  const conversationId = parsed.data.conversationId ?? crypto.randomUUID();
+  const { state } = getConversation(businessId, conversationId);
+  const [business, sales, products, customers, suppliers, expenses] = await Promise.all([
+    db.select().from(businessesTable).where(eq(businessesTable.id, businessId)).then(([row]) => row),
+    db.select().from(salesTable).where(eq(salesTable.businessId, businessId)).orderBy(desc(salesTable.createdAt)).limit(30),
+    db.select().from(productsTable).where(eq(productsTable.businessId, businessId)).orderBy(asc(productsTable.name)).limit(100),
+    db.select().from(customersTable).where(eq(customersTable.businessId, businessId)).orderBy(asc(customersTable.name)).limit(100),
+    db.select().from(suppliersTable).where(eq(suppliersTable.businessId, businessId)).orderBy(asc(suppliersTable.name)).limit(100),
+    db.select().from(expensesTable).where(eq(expensesTable.businessId, businessId)).orderBy(desc(expensesTable.createdAt)).limit(30),
   ]);
-  const products = await db.select().from(productsTable).where(eq(productsTable.businessId, businessId));
-  const lowStock = products.filter((product) => product.currentStock <= product.minimumStock).map((product) => `${product.name} (${product.currentStock} left, minimum ${product.minimumStock})`);
-  const revenue = summary.reduce((sum, sale) => sum + money(sale.total), 0);
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const response = await openai.chat.completions.create({
-    model: "gpt-5-mini",
-    max_completion_tokens: 8192,
-    messages: [
-      { role: "system", content: `You are AutoBiz AI, a precise business copilot. Answer in the user's language (English, Hinglish, or Marathi) when possible. Use only these retrieved facts: recorded sales total ₹${revenue.toFixed(2)} across ${summary.length} sales; low-stock products: ${lowStock.join(", ") || "none"}. If a fact is unavailable, say so. Never invent business numbers. Distinguish facts from recommendations.` },
-      { role: "user", content: parsed.data.message },
-    ],
-  });
-  res.json({ message: response.choices[0]?.message?.content ?? "I couldn't complete that analysis.", conversationId: parsed.data.conversationId ?? crypto.randomUUID(), intent: "BUSINESS_ASSISTANT", facts: [`Sales records analyzed: ${summary.length}`, `Low-stock products found: ${lowStock.length}`] });
+  const lowStock = products.filter((product) => product.currentStock <= product.minimumStock);
+  const revenue = sales.reduce((sum, sale) => sum + money(sale.total), 0);
+  const receivables = customers.reduce((sum, customer) => sum + money(customer.outstanding), 0);
+  const payables = suppliers.reduce((sum, supplier) => sum + money(supplier.payable), 0);
+  const expenseTotal = expenses.reduce((sum, expense) => sum + money(expense.amount), 0);
+  const relevantFaqs = getRelevantFaqs(parsed.data.message);
+  const verifiedContext = [
+    `Business profile: ${business.name}; type: ${business.type}; city: ${business.city}; currency: ${business.currency}.`,
+    `Recorded sales in the connected workspace: ${sales.length} recent sales totaling ${revenue.toFixed(2)} ${business.currency}.`,
+    `Recorded expenses in the connected workspace: ${expenses.length} recent expenses totaling ${expenseTotal.toFixed(2)} ${business.currency}.`,
+    `Customer receivables currently recorded: ${receivables.toFixed(2)} ${business.currency}.`,
+    `Supplier payables currently recorded: ${payables.toFixed(2)} ${business.currency}.`,
+    `Products and stock: ${products.map((product) => `${product.name} [SKU ${product.sku}, ${product.currentStock} ${product.unit} in stock, minimum ${product.minimumStock}, selling price ${money(product.sellingPrice).toFixed(2)}]`).join("; ") || "No product records available."}`,
+    `Customers: ${customers.map((customer) => `${customer.name} [outstanding ${money(customer.outstanding).toFixed(2)} ${business.currency}]`).join("; ") || "No customer records available."}`,
+    `Suppliers: ${suppliers.map((supplier) => `${supplier.name} [payable ${money(supplier.payable).toFixed(2)} ${business.currency}]`).join("; ") || "No supplier records available."}`,
+    `Recent sales: ${sales.slice(0, 10).map((sale) => `${sale.invoiceNumber} [${money(sale.total).toFixed(2)} ${business.currency}, ${sale.paymentStatus}, ${sale.itemCount} items]`).join("; ") || "No sales records available."}`,
+    `Low-stock products: ${lowStock.map((product) => `${product.name} (${product.currentStock} left, minimum ${product.minimumStock})`).join("; ") || "None currently flagged."}`,
+  ].join("\n");
+  const faqContext = relevantFaqs.length
+    ? relevantFaqs.map((entry) => `${entry.id}: ${entry.answer}`).join("\n")
+    : "No relevant FAQ or business-policy entry was found for this question.";
+  const systemPrompt = `You are AutoBiz AI, a capable conversational business copilot.
+
+Answer naturally and use general knowledge, reasoning, and practical business expertise. The connected workspace context below is an additional source of verified business facts, not a restriction on what you may discuss.
+
+Rules:
+- Use the user's language (English, Hinglish, or Marathi) when possible.
+- Use the FAQ/policy entries when they are relevant, but answer normally from your general knowledge when they are not.
+- Treat workspace data as authoritative for business-specific facts. Never invent sales, inventory, customer balances, suppliers, policies, or other business details.
+- If a business-specific answer requires information not present in the verified context or FAQ/policy entries, say exactly what is missing. You may still provide clearly labeled general guidance or a template.
+- Separate verified facts from estimates and recommendations. Recommendations can be creative and practical, but do not present them as recorded facts.
+- Understand this conversation and answer follow-up questions using prior turns. Do not repeat the full context unless useful.
+
+Verified workspace context:
+${verifiedContext}
+
+Relevant FAQ/policy knowledge:
+${faqContext}`;
+  const userMessage: ConversationMessage = { role: "user", content: parsed.data.message };
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: systemPrompt },
+    ...state.messages,
+    userMessage,
+  ];
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const response = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      max_completion_tokens: 8192,
+      messages,
+    });
+    const assistantMessage = response.choices[0]?.message?.content?.trim() || "I couldn't complete that analysis.";
+    const assistantTurn: ConversationMessage = { role: "assistant", content: assistantMessage };
+    state.messages = [...state.messages, userMessage, assistantTurn].slice(-maxConversationMessages);
+    state.updatedAt = Date.now();
+    res.json({
+      message: assistantMessage,
+      conversationId,
+      intent: "BUSINESS_ASSISTANT",
+      facts: [
+        `Workspace context loaded for ${business.name}`,
+        `${sales.length} sales and ${products.length} products available`,
+        `${lowStock.length} products currently below minimum stock`,
+        ...(relevantFaqs.length ? [`FAQ/policy knowledge consulted: ${relevantFaqs.map((entry) => entry.id).join(", ")}`] : []),
+      ],
+    });
+  } catch (error) {
+    console.error("Assistant completion failed", error);
+    const providerStatus = typeof error === "object" && error !== null && "status" in error
+      ? Number(error.status)
+      : undefined;
+    res.status(providerStatus === 429 ? 503 : 502).json({ error: "The AI assistant is temporarily unavailable. Please try again." });
+  }
 });
 
 export default router;
