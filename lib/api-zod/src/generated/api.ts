@@ -415,6 +415,172 @@ export const CreateSaleResponse = zod.object({
 
 
 /**
+ * @summary List saved invoices
+ */
+export const getInvoicesQueryPageDefault = 1;
+
+export const getInvoicesQueryPageSizeDefault = 25;
+export const getInvoicesQueryPageSizeMax = 100;
+
+
+
+export const GetInvoicesQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "status": zod.enum(['paid', 'partial', 'pending']).optional(),
+  "page": zod.coerce.number().min(1).default(getInvoicesQueryPageDefault),
+  "pageSize": zod.coerce.number().min(1).max(getInvoicesQueryPageSizeMax).default(getInvoicesQueryPageSizeDefault)
+})
+
+export const GetInvoicesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "customerId": zod.string().nullable(),
+  "customerName": zod.string(),
+  "customerPhone": zod.string(),
+  "customerAddress": zod.string(),
+  "invoiceDate": zod.string(),
+  "subtotal": zod.number(),
+  "discountType": zod.enum(['fixed', 'percentage']),
+  "discountValue": zod.number(),
+  "discountAmount": zod.number(),
+  "grandTotal": zod.number(),
+  "paymentMethod": zod.enum(['cash', 'upi', 'card', 'other']),
+  "paymentStatus": zod.enum(['paid', 'partial', 'pending']),
+  "amountPaid": zod.number(),
+  "balanceDue": zod.number(),
+  "itemCount": zod.number(),
+  "createdAt": zod.string()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "pageSize": zod.number()
+})
+
+
+/**
+ * @summary Create an invoice, sale, and inventory movement
+ */
+export const createInvoiceBodyIdempotencyKeyMin = 8;
+
+
+
+export const createInvoiceBodyItemsItemUnitPriceMin = 0;
+
+
+export const createInvoiceBodyDiscountValueMin = 0;
+
+export const createInvoiceBodyAmountPaidMin = 0;
+
+
+
+export const CreateInvoiceBody = zod.object({
+  "idempotencyKey": zod.string().min(createInvoiceBodyIdempotencyKeyMin),
+  "customerId": zod.string().nullable(),
+  "customerName": zod.string().min(1),
+  "customerPhone": zod.string(),
+  "customerAddress": zod.string(),
+  "invoiceDate": zod.coerce.date(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "quantity": zod.number().min(1),
+  "unitPrice": zod.number().min(createInvoiceBodyItemsItemUnitPriceMin)
+})).min(1),
+  "discountType": zod.enum(['fixed', 'percentage']),
+  "discountValue": zod.number().min(createInvoiceBodyDiscountValueMin),
+  "paymentMethod": zod.enum(['cash', 'upi', 'card', 'other']),
+  "paymentStatus": zod.enum(['paid', 'partial', 'pending']),
+  "amountPaid": zod.number().min(createInvoiceBodyAmountPaidMin).optional()
+})
+
+export const CreateInvoiceResponse = zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "customerId": zod.string().nullable(),
+  "customerName": zod.string(),
+  "customerPhone": zod.string(),
+  "customerAddress": zod.string(),
+  "invoiceDate": zod.string(),
+  "subtotal": zod.number(),
+  "discountType": zod.enum(['fixed', 'percentage']),
+  "discountValue": zod.number(),
+  "discountAmount": zod.number(),
+  "grandTotal": zod.number(),
+  "paymentMethod": zod.enum(['cash', 'upi', 'card', 'other']),
+  "paymentStatus": zod.enum(['paid', 'partial', 'pending']),
+  "amountPaid": zod.number(),
+  "balanceDue": zod.number(),
+  "itemCount": zod.number(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "business": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "city": zod.string(),
+  "currency": zod.string()
+}),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "productId": zod.string(),
+  "productName": zod.string(),
+  "productSku": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "lineTotal": zod.number()
+})),
+  "saleId": zod.string().nullable()
+}))
+
+
+/**
+ * @summary Get an invoice with business and item details
+ */
+export const GetInvoiceParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetInvoiceResponse = zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "customerId": zod.string().nullable(),
+  "customerName": zod.string(),
+  "customerPhone": zod.string(),
+  "customerAddress": zod.string(),
+  "invoiceDate": zod.string(),
+  "subtotal": zod.number(),
+  "discountType": zod.enum(['fixed', 'percentage']),
+  "discountValue": zod.number(),
+  "discountAmount": zod.number(),
+  "grandTotal": zod.number(),
+  "paymentMethod": zod.enum(['cash', 'upi', 'card', 'other']),
+  "paymentStatus": zod.enum(['paid', 'partial', 'pending']),
+  "amountPaid": zod.number(),
+  "balanceDue": zod.number(),
+  "itemCount": zod.number(),
+  "createdAt": zod.string()
+}).and(zod.object({
+  "business": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "city": zod.string(),
+  "currency": zod.string()
+}),
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "productId": zod.string(),
+  "productName": zod.string(),
+  "productSku": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "lineTotal": zod.number()
+})),
+  "saleId": zod.string().nullable()
+}))
+
+
+/**
  * @summary List products below minimum stock
  */
 export const GetLowStockProductsResponseItem = zod.object({

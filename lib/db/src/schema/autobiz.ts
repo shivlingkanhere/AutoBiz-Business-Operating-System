@@ -74,10 +74,49 @@ export const suppliersTable = pgTable("autobiz_suppliers", {
   createdAt: createdAt(),
 });
 
+export const invoicesTable = pgTable("autobiz_invoices", {
+  id: id(),
+  businessId: uuid("business_id").notNull(),
+  invoiceNumber: text("invoice_number").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  customerId: uuid("customer_id"),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone").notNull().default(""),
+  customerAddress: text("customer_address").notNull().default(""),
+  invoiceDate: timestamp("invoice_date", { withTimezone: true }).notNull(),
+  subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull().default("0"),
+  discountType: text("discount_type").notNull().default("fixed"),
+  discountValue: numeric("discount_value", { precision: 12, scale: 2 }).notNull().default("0"),
+  discountAmount: numeric("discount_amount", { precision: 12, scale: 2 }).notNull().default("0"),
+  grandTotal: numeric("grand_total", { precision: 12, scale: 2 }).notNull().default("0"),
+  itemCount: integer("item_count").notNull().default(0),
+  paymentMethod: text("payment_method").notNull().default("cash"),
+  paymentStatus: text("payment_status").notNull().default("paid"),
+  amountPaid: numeric("amount_paid", { precision: 12, scale: 2 }).notNull().default("0"),
+  balanceDue: numeric("balance_due", { precision: 12, scale: 2 }).notNull().default("0"),
+  createdAt: createdAt(),
+}, (table) => ({
+  invoiceNumberIdx: uniqueIndex("autobiz_invoice_business_number_idx").on(table.businessId, table.invoiceNumber),
+  idempotencyIdx: uniqueIndex("autobiz_invoice_business_idempotency_idx").on(table.businessId, table.idempotencyKey),
+}));
+
+export const invoiceItemsTable = pgTable("autobiz_invoice_items", {
+  id: id(),
+  businessId: uuid("business_id").notNull(),
+  invoiceId: uuid("invoice_id").notNull(),
+  productId: uuid("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  productSku: text("product_sku").notNull(),
+  quantity: integer("quantity").notNull(),
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
+  lineTotal: numeric("line_total", { precision: 12, scale: 2 }).notNull(),
+});
+
 export const salesTable = pgTable("autobiz_sales", {
   id: id(),
   businessId: uuid("business_id").notNull(),
   invoiceNumber: text("invoice_number").notNull(),
+  invoiceId: uuid("invoice_id"),
   customerId: uuid("customer_id"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull().default("0"),
   paymentStatus: text("payment_status").notNull().default("paid"),
@@ -109,6 +148,8 @@ export const insertCustomerSchema = createInsertSchema(customersTable).omit({ id
 export const insertSupplierSchema = createInsertSchema(suppliersTable).omit({ id: true, createdAt: true });
 export const insertSaleSchema = createInsertSchema(salesTable).omit({ id: true, createdAt: true });
 export const insertSaleItemSchema = createInsertSchema(saleItemsTable).omit({ id: true });
+export const insertInvoiceSchema = createInsertSchema(invoicesTable).omit({ id: true, createdAt: true });
+export const insertInvoiceItemSchema = createInsertSchema(invoiceItemsTable).omit({ id: true });
 
 export type Business = typeof businessesTable.$inferSelect;
 export type Category = typeof categoriesTable.$inferSelect;
@@ -117,5 +158,7 @@ export type Customer = typeof customersTable.$inferSelect;
 export type Supplier = typeof suppliersTable.$inferSelect;
 export type Sale = typeof salesTable.$inferSelect;
 export type SaleItem = typeof saleItemsTable.$inferSelect;
+export type Invoice = typeof invoicesTable.$inferSelect;
+export type InvoiceItem = typeof invoiceItemsTable.$inferSelect;
 export type Expense = typeof expensesTable.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;

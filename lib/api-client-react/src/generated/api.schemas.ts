@@ -219,6 +219,135 @@ export interface Sale {
   createdAt: string;
 }
 
+export interface InvoiceItemInput {
+  productId: string;
+  /** @minimum 1 */
+  quantity: number;
+  /** @minimum 0 */
+  unitPrice: number;
+}
+
+export type InvoiceInputDiscountType = typeof InvoiceInputDiscountType[keyof typeof InvoiceInputDiscountType];
+
+
+export const InvoiceInputDiscountType = {
+  fixed: 'fixed',
+  percentage: 'percentage',
+} as const;
+
+export type InvoiceInputPaymentMethod = typeof InvoiceInputPaymentMethod[keyof typeof InvoiceInputPaymentMethod];
+
+
+export const InvoiceInputPaymentMethod = {
+  cash: 'cash',
+  upi: 'upi',
+  card: 'card',
+  other: 'other',
+} as const;
+
+export type InvoiceInputPaymentStatus = typeof InvoiceInputPaymentStatus[keyof typeof InvoiceInputPaymentStatus];
+
+
+export const InvoiceInputPaymentStatus = {
+  paid: 'paid',
+  partial: 'partial',
+  pending: 'pending',
+} as const;
+
+export interface InvoiceInput {
+  /** @minLength 8 */
+  idempotencyKey: string;
+  /** @nullable */
+  customerId: string | null;
+  /** @minLength 1 */
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  invoiceDate: string;
+  /** @minItems 1 */
+  items: InvoiceItemInput[];
+  discountType: InvoiceInputDiscountType;
+  /** @minimum 0 */
+  discountValue: number;
+  paymentMethod: InvoiceInputPaymentMethod;
+  paymentStatus: InvoiceInputPaymentStatus;
+  /** @minimum 0 */
+  amountPaid?: number;
+}
+
+export interface InvoiceItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export type InvoiceDiscountType = typeof InvoiceDiscountType[keyof typeof InvoiceDiscountType];
+
+
+export const InvoiceDiscountType = {
+  fixed: 'fixed',
+  percentage: 'percentage',
+} as const;
+
+export type InvoicePaymentMethod = typeof InvoicePaymentMethod[keyof typeof InvoicePaymentMethod];
+
+
+export const InvoicePaymentMethod = {
+  cash: 'cash',
+  upi: 'upi',
+  card: 'card',
+  other: 'other',
+} as const;
+
+export type InvoicePaymentStatus = typeof InvoicePaymentStatus[keyof typeof InvoicePaymentStatus];
+
+
+export const InvoicePaymentStatus = {
+  paid: 'paid',
+  partial: 'partial',
+  pending: 'pending',
+} as const;
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  /** @nullable */
+  customerId: string | null;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  invoiceDate: string;
+  subtotal: number;
+  discountType: InvoiceDiscountType;
+  discountValue: number;
+  discountAmount: number;
+  grandTotal: number;
+  paymentMethod: InvoicePaymentMethod;
+  paymentStatus: InvoicePaymentStatus;
+  amountPaid: number;
+  balanceDue: number;
+  itemCount: number;
+  createdAt: string;
+}
+
+export type InvoiceDetail = Invoice & ({
+  business: Business;
+  items: InvoiceItem[];
+  /** @nullable */
+  saleId: string | null;
+});
+
+export interface InvoicePage {
+  items: Invoice[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface SaleItemInput {
   productId: string;
   /** @minimum 1 */
@@ -315,6 +444,29 @@ export const GetSalesRange = {
   today: 'today',
   week: 'week',
   month: 'month',
+} as const;
+
+export type GetInvoicesParams = {
+search?: SearchParameter;
+status?: GetInvoicesStatus;
+/**
+ * @minimum 1
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+pageSize?: number;
+};
+
+export type GetInvoicesStatus = typeof GetInvoicesStatus[keyof typeof GetInvoicesStatus];
+
+
+export const GetInvoicesStatus = {
+  paid: 'paid',
+  partial: 'partial',
+  pending: 'pending',
 } as const;
 
 export type GetSalesReportParams = {

@@ -15,6 +15,7 @@ tags:
   - name: customers
   - name: suppliers
   - name: sales
+  - name: invoices
   - name: inventory
   - name: reports
   - name: assistant
@@ -297,6 +298,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Sale"
+  /invoices:
+    get:
+      operationId: getInvoices
+      tags: [invoices]
+      summary: List saved invoices
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - name: status
+          in: query
+          schema: { type: string, enum: [paid, partial, pending] }
+        - name: page
+          in: query
+          schema: { type: number, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: number, minimum: 1, maximum: 100, default: 25 }
+      responses:
+        "200":
+          description: Invoice history page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoicePage"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create an invoice, sale, and inventory movement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "201":
+          description: Created invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
+  /invoices/{id}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get an invoice with business and item details
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Invoice detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvoiceDetail"
   /inventory/low-stock:
     get:
       operationId: getLowStockProducts
@@ -531,6 +586,88 @@ components:
         itemCount: { type: number }
         createdAt: { type: string }
       required: [id, invoiceNumber, customerName, total, paymentStatus, itemCount, createdAt]
+    InvoiceItemInput:
+      type: object
+      properties:
+        productId: { type: string }
+        quantity: { type: number, minimum: 1 }
+        unitPrice: { type: number, minimum: 0 }
+      required: [productId, quantity, unitPrice]
+    InvoiceInput:
+      type: object
+      properties:
+        idempotencyKey: { type: string, minLength: 8 }
+        customerId: { type: ["string", "null"] }
+        customerName: { type: string, minLength: 1 }
+        customerPhone: { type: string }
+        customerAddress: { type: string }
+        invoiceDate: { type: string, format: date-time }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/InvoiceItemInput" }
+        discountType: { type: string, enum: [fixed, percentage] }
+        discountValue: { type: number, minimum: 0 }
+        paymentMethod: { type: string, enum: [cash, upi, card, other] }
+        paymentStatus: { type: string, enum: [paid, partial, pending] }
+        amountPaid: { type: number, minimum: 0 }
+      required: [idempotencyKey, customerId, customerName, customerPhone, customerAddress, invoiceDate, items, discountType, discountValue, paymentMethod, paymentStatus]
+    InvoiceItem:
+      type: object
+      properties:
+        id: { type: string }
+        productId: { type: string }
+        productName: { type: string }
+        productSku: { type: string }
+        quantity: { type: number }
+        unitPrice: { type: number }
+        lineTotal: { type: number }
+      required: [id, productId, productName, productSku, quantity, unitPrice, lineTotal]
+    Invoice:
+      type: object
+      properties:
+        id: { type: string }
+        invoiceNumber: { type: string }
+        customerId: { type: ["string", "null"] }
+        customerName: { type: string }
+        customerPhone: { type: string }
+        customerAddress: { type: string }
+        invoiceDate: { type: string }
+        subtotal: { type: number }
+        discountType: { type: string, enum: [fixed, percentage] }
+        discountValue: { type: number }
+        discountAmount: { type: number }
+        grandTotal: { type: number }
+        itemCount: { type: number }
+        paymentMethod: { type: string, enum: [cash, upi, card, other] }
+        paymentStatus: { type: string, enum: [paid, partial, pending] }
+        amountPaid: { type: number }
+        balanceDue: { type: number }
+        itemCount: { type: number }
+        createdAt: { type: string }
+      required: [id, invoiceNumber, customerId, customerName, customerPhone, customerAddress, invoiceDate, subtotal, discountType, discountValue, discountAmount, grandTotal, itemCount, paymentMethod, paymentStatus, amountPaid, balanceDue, createdAt]
+    InvoiceDetail:
+      allOf:
+        - $ref: "#/components/schemas/Invoice"
+        - type: object
+          properties:
+            business:
+              $ref: "#/components/schemas/Business"
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/InvoiceItem" }
+            saleId: { type: ["string", "null"] }
+          required: [business, items, saleId]
+    InvoicePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Invoice" }
+        total: { type: number }
+        page: { type: number }
+        pageSize: { type: number }
+      required: [items, total, page, pageSize]
     SaleItemInput:
       type: object
       properties:

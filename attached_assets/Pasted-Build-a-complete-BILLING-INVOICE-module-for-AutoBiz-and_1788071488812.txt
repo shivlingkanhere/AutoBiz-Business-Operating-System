@@ -1,0 +1,529 @@
+Build a complete BILLING / INVOICE module for AutoBiz and integrate it with the existing Sales module.
+
+IMPORTANT:
+Inspect the existing project architecture, database schema, API contract, authentication, product/inventory module and sales module BEFORE implementing.
+
+Do not create a disconnected/mock billing page.
+The billing system must use the existing real products, customers, database and sales data.
+
+==================================================
+1. BILLING PAGE
+==================================================
+
+Create a professional Billing / Create Invoice page.
+
+The user should be able to create a bill for a customer after they purchase products.
+
+Customer section:
+
+Fields:
+- Customer Name
+- Mobile Number
+- Address
+- Date
+
+Behavior:
+- Date should automatically default to today's date.
+- Customer details should be saved with the invoice.
+- If the customer already exists, allow selecting/searching the existing customer.
+- If it is a new customer, allow creating/saving the customer from the billing flow.
+- Do not create duplicate customers unnecessarily.
+
+==================================================
+2. INVOICE NUMBER
+==================================================
+
+Automatically generate a unique invoice/bill number.
+
+Example:
+INV-000001
+INV-000002
+INV-000003
+
+Requirements:
+- Unique
+- Sequential where practical
+- Stored permanently in database
+- Never reuse an invoice number after an invoice is created.
+
+==================================================
+3. ADD PRODUCTS / ITEMS
+==================================================
+
+Allow the user to add purchased items to the invoice.
+
+For every item:
+
+- Product selection/search
+- Quantity
+- Unit price
+- Total price
+
+Formula:
+
+Item Total = Quantity × Unit Price
+
+Example:
+
+Product: Chair
+Quantity: 2
+Price: ₹1500
+Total: ₹3000
+
+Allow:
+- Add multiple products
+- Remove product
+- Change quantity
+- Change price if the user's role has permission
+- Search existing products
+
+IMPORTANT:
+Use the existing product catalog/database.
+
+Do NOT require manually typing product names if the product already exists.
+
+==================================================
+4. AUTOMATIC CALCULATIONS
+==================================================
+
+The invoice should automatically calculate:
+
+Subtotal
+Discount
+Grand Total
+
+Example:
+
+Subtotal = ₹10,000
+Discount = ₹1,000
+Grand Total = ₹9,000
+
+Discount must be configurable by the business/user.
+
+Support:
+- Fixed amount discount
+- Percentage discount
+
+Example:
+
+10% discount on ₹10,000 = ₹1,000
+
+OR
+
+₹500 fixed discount = ₹500
+
+The user should be able to choose the discount type and enter the discount value.
+
+Automatically recalculate the final amount whenever:
+- Item is added
+- Item is removed
+- Quantity changes
+- Price changes
+- Discount changes
+
+Prevent invalid discounts.
+
+For example:
+- Discount cannot make the final total negative.
+- Percentage discount cannot exceed 100%.
+
+==================================================
+5. PAYMENT INFORMATION
+==================================================
+
+Add payment details to the invoice.
+
+Support:
+- Cash
+- UPI
+- Card
+- Other
+
+Add payment status:
+- Paid
+- Pending
+- Partial
+
+If useful within the existing architecture, support:
+- Amount paid
+- Balance due
+
+Do not break the existing data model.
+
+==================================================
+6. BILL PREVIEW
+==================================================
+
+After clicking:
+
+"Generate Bill"
+
+show a professional invoice/bill preview page.
+
+The bill should contain:
+
+BUSINESS INFORMATION
+- Business/store name
+- Business address
+- Business mobile/contact information
+- Other existing business details if available
+
+INVOICE INFORMATION
+- Invoice number
+- Date
+
+CUSTOMER INFORMATION
+- Customer name
+- Mobile number
+- Address
+
+ITEM TABLE
+
+| Item | Qty | Price | Total |
+
+Then:
+
+Subtotal
+Discount
+Grand Total
+
+Payment status/payment method where applicable.
+
+Create a clean professional printable invoice design.
+
+==================================================
+7. SAVE AS PDF
+==================================================
+
+Add:
+
+"Download PDF"
+
+button.
+
+The generated PDF should contain the complete invoice.
+
+Requirements:
+- Professional invoice formatting
+- No UI buttons inside the PDF
+- Correct business/customer/item information
+- Correct totals
+- Correct discount
+- Correct invoice number
+- Correct date
+- Proper page formatting
+- Printable on standard paper sizes
+
+The PDF should be generated from the real invoice data.
+
+Do NOT create a screenshot/image of the UI as the PDF.
+
+==================================================
+8. SAVE INVOICE
+==================================================
+
+Add:
+
+"Save Bill"
+
+or equivalent action.
+
+When the invoice is saved:
+
+- Persist invoice in database.
+- Persist invoice items.
+- Persist customer association.
+- Persist discount.
+- Persist subtotal and grand total.
+- Persist payment information.
+- Persist invoice date.
+- Persist invoice number.
+
+The saved invoice must be retrievable later.
+
+==================================================
+9. AUTOMATIC SALES INTEGRATION
+==================================================
+
+THIS IS VERY IMPORTANT.
+
+When a bill/invoice is successfully completed and saved, automatically create/update the corresponding Sales record.
+
+Example:
+
+Customer buys:
+
+Chair × 2 = ₹3000
+Table × 1 = ₹5000
+
+Subtotal = ₹8000
+Discount = ₹500
+
+Final sale = ₹7500
+
+Sales module should automatically record:
+
+- Invoice ID
+- Invoice number
+- Customer
+- Items
+- Quantity
+- Gross amount/subtotal
+- Discount
+- Net sale amount
+- Sale date
+- Payment method/status
+- Business/store
+
+The sale must NOT be counted twice if the user reloads the page or downloads the PDF.
+
+Use proper database relationships/transactions/idempotency.
+
+==================================================
+10. INVENTORY INTEGRATION
+==================================================
+
+If AutoBiz already has inventory/stock tracking, integrate billing with inventory.
+
+When a completed/paid sale is finalized:
+
+Decrease product stock based on the quantity sold.
+
+Example:
+
+Before:
+Chair stock = 20
+
+Bill:
+Chair × 2
+
+After:
+Chair stock = 18
+
+IMPORTANT:
+Do not reduce stock while the user is merely editing an unsaved invoice.
+
+Only update inventory when the sale/invoice is successfully finalized.
+
+Prevent selling more than available stock if inventory rules already support stock validation.
+
+==================================================
+11. SALES DASHBOARD
+==================================================
+
+Make sure the saved bill automatically appears in the existing Sales module.
+
+The Sales dashboard should reflect the new sale in:
+
+- Total sales
+- Today's sales
+- Number of transactions
+- Revenue
+- Relevant sales reports/charts
+
+Use the FINAL amount after discount for net sales.
+
+Example:
+
+Subtotal = ₹10,000
+Discount = ₹1,000
+Net Sale = ₹9,000
+
+Sales revenue should increase by ₹9,000, not ₹10,000.
+
+==================================================
+12. BILLING HISTORY
+==================================================
+
+Create a Billing/Invoices history page if one does not already exist.
+
+Display:
+
+- Invoice number
+- Customer
+- Date
+- Amount
+- Payment status
+- Actions
+
+Actions:
+- View
+- Download PDF
+- Print
+- Search
+- Filter
+
+Do not duplicate existing invoice functionality if a suitable page already exists. Extend the existing architecture instead.
+
+==================================================
+13. PERMISSIONS / SECURITY
+==================================================
+
+Respect existing Clerk authentication and AutoBiz roles.
+
+Only authorized business/store users should be able to:
+- Create bills
+- View bills
+- Edit/cancel bills according to existing role permissions
+
+Never allow one business/store to access another business/store's invoices or sales.
+
+Every database query must enforce the correct business/store ownership.
+
+==================================================
+14. DATABASE
+==================================================
+
+Inspect the current schema first.
+
+If required, add proper tables/entities such as:
+
+invoices
+invoice_items
+invoice/customer relationships
+payment information
+
+Use the project's existing ORM/database architecture.
+
+Do NOT create a second unrelated database layer.
+
+Use proper foreign keys and relationships.
+
+Invoice totals should be safely persisted.
+
+Use database transactions when creating:
+- Invoice
+- Invoice items
+- Sale
+- Inventory updates
+
+This prevents partial/duplicate transactions.
+
+==================================================
+15. UI/UX
+==================================================
+
+Keep the existing AutoBiz design system.
+
+The billing flow should be simple:
+
+Create Bill
+    ↓
+Select Customer
+    ↓
+Add Products
+    ↓
+Set Quantity & Price
+    ↓
+Apply Discount
+    ↓
+Review Total
+    ↓
+Generate/Preview Bill
+    ↓
+Save Invoice
+    ↓
+Record Sale
+    ↓
+Update Inventory
+    ↓
+Download/Print PDF
+
+Make it responsive for desktop and laptop screens.
+
+Show clear validation errors.
+
+Show success confirmation after saving.
+
+==================================================
+16. IMPORTANT EDGE CASES
+==================================================
+
+Handle:
+
+- Empty customer name where required
+- Invalid mobile number
+- No products added
+- Quantity <= 0
+- Invalid price
+- Discount > subtotal
+- Discount percentage > 100%
+- Product not found
+- Insufficient stock
+- Duplicate submission
+- User refreshing after saving
+- Network/API failure
+- Database failure
+- PDF generation failure
+
+Do not create duplicate sales or invoices if the user clicks Save multiple times.
+
+==================================================
+17. TESTING
+==================================================
+
+After implementation, actually test the complete flow.
+
+Test example:
+
+Customer:
+Rahul Patil
+Mobile:
+9999999999
+Address:
+Pune
+
+Items:
+Chair × 2 × ₹1500 = ₹3000
+Table × 1 × ₹5000 = ₹5000
+
+Subtotal = ₹8000
+
+Apply:
+10% discount
+
+Discount = ₹800
+
+Final total = ₹7200
+
+Verify:
+
+1. Invoice is created.
+2. Unique invoice number is generated.
+3. Customer information is saved.
+4. Invoice items are saved.
+5. Discount is saved correctly.
+6. Final total = ₹7200.
+7. Invoice preview displays correctly.
+8. PDF downloads correctly.
+9. Invoice appears in billing history.
+10. Sale appears in Sales module.
+11. Sales revenue increases by ₹7200.
+12. Inventory decreases by the sold quantities.
+13. Refreshing does not create another sale.
+14. Existing AutoBiz features still work.
+
+==================================================
+IMPORTANT DEVELOPMENT RULE
+==================================================
+
+Do NOT build a static/mock billing UI.
+
+Use the REAL existing:
+- Database
+- Products
+- Customers
+- Sales
+- Authentication
+- API
+- Business/store context
+
+Inspect the current codebase first and reuse existing components/services wherever possible.
+
+Do not unnecessarily rewrite working modules.
+
+Implement → migrate database if required → run → test → fix errors → retest.
+
+Do not stop at planning.
+
+The feature is complete only when a real bill can be created, saved, downloaded as PDF, recorded automatically in Sales, and reflected in inventory.

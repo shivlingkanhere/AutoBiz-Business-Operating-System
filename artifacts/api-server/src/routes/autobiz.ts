@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
-import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions/completions";
 import { getAuth } from "@clerk/express";
@@ -9,6 +9,8 @@ import {
   categoriesTable,
   customersTable,
   expensesTable,
+  invoiceItemsTable,
+  invoicesTable,
   productsTable,
   saleItemsTable,
   salesTable,
@@ -17,9 +19,12 @@ import {
 import {
   CreateCategoryBody,
   CreateCustomerBody,
+  CreateInvoiceBody,
   CreateProductBody,
   CreateSaleBody,
   GetCustomersQueryParams,
+  GetInvoicesQueryParams,
+  GetInvoiceParams,
   GetProductsQueryParams,
   GetSalesQueryParams,
   GetSalesReportQueryParams,
@@ -61,6 +66,74 @@ const faqKnowledge = [
 
 const money = (value: string | number | null | undefined) => Number(value ?? 0);
 const iso = (value: Date | null | undefined) => value?.toISOString() ?? null;
+
+class BillingError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
+function invoiceResponse(invoice: typeof invoicesTable.$inferSelect) {
+  return {
+    id: invoice.id,
+    invoiceNumber: invoice.invoiceNumber,
+    customerId: invoice.customerId,
+    customerName: invoice.customerName,
+    customerPhone: invoice.customerPhone,
+    customerAddress: invoice.customerAddress,
+    invoiceDate: invoice.invoiceDate.toISOString(),
+    subtotal: money(invoice.subtotal),
+    discountType: invoice.discountType as "fixed" | "percentage",
+    discountValue: money(invoice.discountValue),
+    discountAmount: money(invoice.discountAmount),
+    grandTotal: money(invoice.grandTotal),
+    itemCount: invoice.itemCount,
+    paymentMethod: invoice.paymentMethod as "cash" | "upi" | "card" | "other",
+    paymentStatus: invoice.paymentStatus as "paid" | "partial" | "pending",
+    amountPaid: money(invoice.amountPaid),
+    balanceDue: money(invoice.balanceDue),
+    createdAt: invoice.createdAt.toISOString(),
+  };
+}
+
+async function getInvoiceDetail(businessId: string, id: string) {
+  const [row] = await db
+    .select({
+      invoice: invoicesTable,
+      business: {
+        id: businessesTable.id,
+        name: businessesTable.name,
+        type: businessesTable.type,
+        city: businessesTable.city,
+        currency: businessesTable.currency,
+      },
+      saleId: salesTable.id,
+    })
+    .from(invoicesTable)
+    .innerJoin(businessesTable, eq(invoicesTable.businessId, businessesTable.id))
+    .leftJoin(salesTable, and(eq(salesTable.invoiceId, invoicesTable.id), eq(salesTable.businessId, businessId)))
+    .where(and(eq(invoicesTable.id, id), eq(invoicesTable.businessId, businessId)))
+    .limit(1);
+  if (!row) return null;
+  const items = await db
+    .select()
+    .from(invoiceItemsTable)
+    .where(and(eq(invoiceItemsTable.invoiceId, id), eq(invoiceItemsTable.businessId, businessId)));
+  return {
+    ...invoiceResponse(row.invoice),
+    business: row.business,
+    saleId: row.saleId ?? null,
+    items: items.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      productName: item.productName,
+      productSku: item.productSku,
+      quantity: item.quantity,
+      unitPrice: money(item.unitPrice),
+      lineTotal: money(item.lineTotal),
+    })),
+  };
+}
 
 function getRelevantFaqs(message: string) {
   const normalized = message.toLowerCase();
@@ -350,6 +423,221 @@ router.post("/sales", async (req, res): Promise<void> => {
     await db.update(productsTable).set({ currentStock: sql`${productsTable.currentStock} - ${item.quantity}`, updatedAt: new Date() }).where(and(eq(productsTable.id, item.productId), eq(productsTable.businessId, businessId)));
   }
   res.status(201).json({ id: sale.id, invoiceNumber: sale.invoiceNumber, customerName: "Customer", total, paymentStatus: sale.paymentStatus as "paid" | "partial" | "pending", itemCount: sale.itemCount, createdAt: sale.createdAt.toISOString() });
+});
+
+router.get("/invoices", async (req, res): Promise<void> => {
+  const businessId = await businessContext(req);
+  const parsed = GetInvoicesQueryParams.safeParse(req.query);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const { search, status, page = 1, pageSize = 25 } = parsed.data;
+  const filters = [eq(invoicesTable.businessId, businessId)];
+  if (status) filters.push(eq(invoicesTable.paymentStatus, status));
+  if (search) {
+    filters.push(or(
+      ilike(invoicesTable.invoiceNumber, `%${search}%`),
+      ilike(invoicesTable.customerName, `%${search}%`),
+      ilike(invoicesTable.customerPhone, `%${search}%`),
+    )!);
+  }
+  const rows = await db
+    .select()
+    .from(invoicesTable)
+    .where(and(...filters))
+    .orderBy(desc(invoicesTable.invoiceDate));
+  const start = (page - 1) * pageSize;
+  res.json({
+    items: rows.slice(start, start + pageSize).map(invoiceResponse),
+    total: rows.length,
+    page,
+    pageSize,
+  });
+});
+
+router.get("/invoices/:id", async (req, res): Promise<void> => {
+  const businessId = await businessContext(req);
+  const parsed = GetInvoiceParams.safeParse(req.params);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const invoice = await getInvoiceDetail(businessId, parsed.data.id);
+  if (!invoice) { res.status(404).json({ error: "Invoice not found" }); return; }
+  res.json(invoice);
+});
+
+router.post("/invoices", async (req, res): Promise<void> => {
+  const businessId = await businessContext(req);
+  const parsed = CreateInvoiceBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  try {
+    const createdId = await db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select({ id: invoicesTable.id })
+        .from(invoicesTable)
+        .where(and(eq(invoicesTable.businessId, businessId), eq(invoicesTable.idempotencyKey, parsed.data.idempotencyKey)))
+        .limit(1);
+      if (existing) return existing.id;
+
+      const invoiceDate = new Date(parsed.data.invoiceDate);
+      if (Number.isNaN(invoiceDate.getTime())) throw new BillingError(400, "Invoice date is invalid.");
+
+      const quantities = new Map<string, number>();
+      const itemCalculations = parsed.data.items.map((item) => {
+        if (!Number.isInteger(item.quantity) || item.quantity <= 0) throw new BillingError(400, "Every item quantity must be a whole number greater than zero.");
+        if (!Number.isFinite(item.unitPrice) || item.unitPrice < 0) throw new BillingError(400, "Every item price must be a valid non-negative number.");
+        quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
+        const unitPriceCents = Math.round(item.unitPrice * 100);
+        return { ...item, unitPriceCents, lineTotalCents: unitPriceCents * item.quantity };
+      });
+      const productIds = [...quantities.keys()];
+      const products = await tx
+        .select()
+        .from(productsTable)
+        .where(and(eq(productsTable.businessId, businessId), inArray(productsTable.id, productIds)));
+      const productsById = new Map(products.map((product) => [product.id, product]));
+      if (products.length !== productIds.length) throw new BillingError(400, "One or more selected products could not be found in this business.");
+
+      const subtotalCents = itemCalculations.reduce((sum, item) => sum + item.lineTotalCents, 0);
+      const discountValue = parsed.data.discountValue;
+      const discountCents = parsed.data.discountType === "percentage"
+        ? Math.round(subtotalCents * discountValue / 100)
+        : Math.round(discountValue * 100);
+      if (parsed.data.discountType === "percentage" && discountValue > 100) throw new BillingError(400, "Percentage discount cannot exceed 100%.");
+      if (discountCents > subtotalCents) throw new BillingError(400, "Discount cannot exceed the subtotal.");
+      const grandTotalCents = subtotalCents - discountCents;
+      const defaultAmountPaid = parsed.data.paymentStatus === "paid" ? grandTotalCents : 0;
+      const amountPaidCents = Math.round((parsed.data.amountPaid ?? defaultAmountPaid) * 100);
+      if (amountPaidCents < 0 || amountPaidCents > grandTotalCents) throw new BillingError(400, "Amount paid must be between zero and the final total.");
+      if (parsed.data.paymentStatus === "paid" && amountPaidCents !== grandTotalCents) throw new BillingError(400, "A paid invoice must have the full amount paid.");
+      if (parsed.data.paymentStatus === "partial" && (amountPaidCents <= 0 || amountPaidCents >= grandTotalCents)) throw new BillingError(400, "A partial payment must be greater than zero and less than the final total.");
+      if (parsed.data.paymentStatus === "pending" && amountPaidCents !== 0) throw new BillingError(400, "A pending invoice cannot have an amount paid.");
+
+      let customerId = parsed.data.customerId;
+      let customerName = parsed.data.customerName.trim();
+      let customerPhone = parsed.data.customerPhone.trim();
+      let customerAddress = parsed.data.customerAddress.trim();
+      if (customerId) {
+        const [customer] = await tx
+          .select()
+          .from(customersTable)
+          .where(and(eq(customersTable.id, customerId), eq(customersTable.businessId, businessId)))
+          .limit(1);
+        if (!customer) throw new BillingError(404, "Selected customer was not found in this business.");
+        customerName = customer.name;
+        customerPhone = customer.phone;
+        customerAddress = customer.city;
+      } else {
+        const existingCustomer = await tx
+          .select()
+          .from(customersTable)
+          .where(customerPhone
+            ? and(eq(customersTable.businessId, businessId), eq(customersTable.phone, customerPhone))
+            : and(eq(customersTable.businessId, businessId), eq(customersTable.name, customerName)))
+          .limit(1);
+        if (existingCustomer[0]) {
+          customerId = existingCustomer[0].id;
+          customerName = existingCustomer[0].name;
+          customerPhone = existingCustomer[0].phone;
+          customerAddress = existingCustomer[0].city;
+        } else {
+          const [createdCustomer] = await tx.insert(customersTable).values({
+            businessId,
+            name: customerName,
+            phone: customerPhone,
+            city: customerAddress,
+          }).returning();
+          customerId = createdCustomer.id;
+        }
+      }
+
+      const [latest] = await tx
+        .select({ invoiceNumber: invoicesTable.invoiceNumber })
+        .from(invoicesTable)
+        .where(eq(invoicesTable.businessId, businessId))
+        .orderBy(desc(invoicesTable.createdAt))
+        .limit(1);
+      const previousNumber = Number(latest?.invoiceNumber.match(/\d+$/)?.[0] ?? 0);
+      const invoiceNumber = `INV-${String(previousNumber + 1).padStart(6, "0")}`;
+      const subtotal = (subtotalCents / 100).toFixed(2);
+      const discountAmount = (discountCents / 100).toFixed(2);
+      const grandTotal = (grandTotalCents / 100).toFixed(2);
+      const amountPaid = (amountPaidCents / 100).toFixed(2);
+      const balanceDue = ((grandTotalCents - amountPaidCents) / 100).toFixed(2);
+      const [invoice] = await tx.insert(invoicesTable).values({
+        businessId,
+        invoiceNumber,
+        idempotencyKey: parsed.data.idempotencyKey,
+        customerId,
+        customerName,
+        customerPhone,
+        customerAddress,
+        invoiceDate,
+        subtotal,
+        discountType: parsed.data.discountType,
+        discountValue: String(discountValue),
+        discountAmount,
+        grandTotal,
+        itemCount: itemCalculations.reduce((sum, item) => sum + item.quantity, 0),
+        paymentMethod: parsed.data.paymentMethod,
+        paymentStatus: parsed.data.paymentStatus,
+        amountPaid,
+        balanceDue,
+      }).returning();
+      await tx.insert(invoiceItemsTable).values(itemCalculations.map((item) => {
+        const product = productsById.get(item.productId)!;
+        return {
+          businessId,
+          invoiceId: invoice.id,
+          productId: product.id,
+          productName: product.name,
+          productSku: product.sku,
+          quantity: item.quantity,
+          unitPrice: (item.unitPriceCents / 100).toFixed(2),
+          lineTotal: (item.lineTotalCents / 100).toFixed(2),
+        };
+      }));
+      const [sale] = await tx.insert(salesTable).values({
+        businessId,
+        invoiceId: invoice.id,
+        invoiceNumber,
+        customerId,
+        total: grandTotal,
+        paymentStatus: parsed.data.paymentStatus,
+        itemCount: invoice.itemCount,
+        createdAt: invoiceDate,
+      }).returning();
+      await tx.insert(saleItemsTable).values(itemCalculations.map((item) => ({
+        businessId,
+        saleId: sale.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: (item.unitPriceCents / 100).toFixed(2),
+      })));
+      for (const [productId, quantity] of quantities) {
+        const updated = await tx.update(productsTable)
+          .set({ currentStock: sql`${productsTable.currentStock} - ${quantity}`, updatedAt: new Date() })
+          .where(and(eq(productsTable.id, productId), eq(productsTable.businessId, businessId), sql`${productsTable.currentStock} >= ${quantity}`))
+          .returning({ id: productsTable.id });
+        if (!updated[0]) throw new BillingError(409, `Insufficient stock for ${productsById.get(productId)?.name ?? "a selected product"}.`);
+      }
+      await tx.update(customersTable)
+        .set({
+          totalPurchases: sql`${customersTable.totalPurchases} + ${grandTotal}`,
+          outstanding: sql`${customersTable.outstanding} + ${balanceDue}`,
+          lastPurchaseAt: invoiceDate,
+        })
+        .where(and(eq(customersTable.id, customerId), eq(customersTable.businessId, businessId)));
+      return invoice.id;
+    });
+    const detail = await getInvoiceDetail(businessId, createdId);
+    if (!detail) { res.status(500).json({ error: "Invoice was created but could not be loaded." }); return; }
+    res.status(201).json(detail);
+  } catch (error) {
+    if (error instanceof BillingError) {
+      res.status(error.status).json({ error: error.message });
+      return;
+    }
+    req.log.error({ err: error }, "Invoice creation failed");
+    res.status(500).json({ error: "Invoice could not be saved. No sale or inventory changes were kept." });
+  }
 });
 
 router.get("/inventory/low-stock", async (req, res): Promise<void> => {
