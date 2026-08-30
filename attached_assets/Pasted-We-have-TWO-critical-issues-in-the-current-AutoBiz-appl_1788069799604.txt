@@ -1,0 +1,241 @@
+We have TWO critical issues in the current AutoBiz application. Fix BOTH issues completely. Do not just explain or plan — inspect the existing code, implement the fixes, run/test the application, and continue until both are working.
+
+==================================================
+ISSUE 1 — DASHBOARD / UI LAYOUT IS BROKEN
+==================================================
+
+The dashboard layout has a responsive positioning/clipping problem.
+
+Observed behavior:
+- The desktop sidebar/header layout causes part of the main content to be hidden or clipped.
+- Some dashboard text/cards are partially cut off behind the sidebar.
+- The main content is not correctly positioned relative to the sidebar.
+- On smaller/laptop viewport sizes, the layout can overlap or clip content.
+- There is unnecessary blank space in some sections.
+
+Fix the ROOT CAUSE in the frontend.
+
+Requirements:
+1. Inspect the current layout, sidebar, header and main-content components before changing anything.
+2. Ensure the sidebar and main content have a proper layout relationship.
+3. Main content must NEVER render underneath or behind the sidebar.
+4. If sidebar/header uses fixed or sticky positioning, calculate the available main-content area correctly.
+5. Remove problematic hardcoded positioning, negative margins, transforms or incorrect fixed widths where they cause the issue.
+6. Prevent unintended horizontal overflow.
+7. Make the layout responsive for desktop, laptop, tablet and smaller screens.
+8. Preserve the existing AutoBiz visual design, colors, typography and components.
+9. Do NOT redesign the UI.
+10. Do NOT remove existing functionality.
+11. Make sure headings, cards, tables, chat panels and other content are fully visible.
+12. Verify the layout using the actual running application, not only static code inspection.
+
+==================================================
+ISSUE 2 — AI CHAT DOES NOT RETURN A REPLY
+==================================================
+
+Current behavior shown in the chat:
+- User messages appear successfully.
+- Example user message: "hi"
+- The message appears in the UI.
+- BUT the AI assistant does not return a response.
+- Previously the assistant was also behaving like an FAQ-only bot.
+
+This is a CRITICAL backend/API/AI integration issue.
+
+First inspect the complete chat flow:
+
+Frontend chat UI
+    ↓
+Frontend API request
+    ↓
+Backend chat endpoint
+    ↓
+Authentication / Clerk user context
+    ↓
+Business context
+    ↓
+Conversation history
+    ↓
+FAQ retrieval (if relevant)
+    ↓
+AI model/API call
+    ↓
+AI response
+    ↓
+Backend response
+    ↓
+Frontend rendering
+
+Find exactly where this flow is failing.
+
+IMPORTANT:
+Do not assume the problem is only the frontend.
+
+Check:
+- Browser console errors
+- Network request/response
+- API endpoint
+- HTTP status code
+- Backend logs
+- Request payload
+- Response payload
+- Authentication
+- Clerk user/business identification
+- AI API key availability
+- AI SDK configuration
+- Model configuration
+- Environment variables
+- Timeout/error handling
+- Database queries
+- Conversation history
+- Frontend response parsing
+- Loading/error states
+
+The AI key is already securely configured. DO NOT expose, print, hardcode, or commit the API key.
+
+==================================================
+AI BEHAVIOR REQUIREMENTS
+==================================================
+
+The assistant must behave as a REAL conversational AI assistant, not an FAQ search bot.
+
+FAQ should be a KNOWLEDGE SOURCE, not the entire AI brain.
+
+Example:
+
+User:
+"hi"
+
+Expected:
+A natural conversational response such as:
+"Hi! How can I help you with your business today?"
+
+User:
+"How can I increase my shop sales?"
+
+Expected:
+Generate a useful AI answer even if there is no matching FAQ.
+
+User:
+"Which products should I reorder?"
+
+Expected:
+If inventory/business data is available, use the actual data and provide a useful answer.
+
+User:
+"What is your return policy?"
+
+Expected:
+Use the relevant FAQ/business policy if available.
+
+==================================================
+AI ORCHESTRATION
+==================================================
+
+Implement/fix the AI orchestration so that:
+
+1. User message reaches the backend correctly.
+2. Backend validates the authenticated user.
+3. Backend identifies the correct business/store context.
+4. Backend retrieves relevant FAQ/context when appropriate.
+5. Backend retrieves conversation history when appropriate.
+6. Backend sends a properly structured prompt/messages to the configured AI model.
+7. AI generates the response.
+8. Backend returns the AI response to the frontend.
+9. Frontend displays the assistant response.
+10. Errors are handled gracefully and visibly.
+
+The assistant should:
+- Understand normal conversation.
+- Answer general questions.
+- Use FAQ when relevant.
+- Use business data when relevant.
+- Remember conversation context.
+- Handle follow-up questions.
+- Never invent business-specific facts.
+- Clearly say when required business data is unavailable.
+
+==================================================
+ERROR HANDLING
+==================================================
+
+If the AI provider fails:
+- Do not silently fail.
+- Log a safe server-side diagnostic.
+- Return a useful error response to the frontend.
+- Show a user-friendly error state.
+
+Do NOT expose:
+- API keys
+- Secrets
+- Internal stack traces
+- Sensitive authentication data
+
+==================================================
+IMPORTANT IMPLEMENTATION RULES
+==================================================
+
+1. Inspect the EXISTING implementation first.
+2. Preserve working code.
+3. Do not rebuild the application from scratch.
+4. Do not create mock AI responses.
+5. Do not use hardcoded fake chatbot replies.
+6. Do not replace the real AI integration with an FAQ-only solution.
+7. Keep Clerk authentication working.
+8. Keep the existing database and API contract unless a necessary fix requires a compatible change.
+9. Keep existing pages and features working.
+10. Do not delete existing functionality.
+11. Do not expose secrets.
+12. Use the existing configured AI provider/key/model unless the current implementation is demonstrably broken and needs correction.
+
+==================================================
+TESTING
+==================================================
+
+After implementing the fixes, actually run the application.
+
+Test the chat with at least these messages:
+
+1. "hi"
+2. "How can I increase my shop sales?"
+3. "Which products should I reorder?"
+4. "What is the return policy?"
+
+Verify:
+- User message appears.
+- Loading state appears correctly.
+- AI request is actually sent.
+- Backend receives it.
+- AI provider responds.
+- Backend returns the response.
+- AI response appears in the chat UI.
+- Conversation history works.
+- FAQ information is used when relevant.
+- Non-FAQ questions still receive normal AI-generated answers.
+
+Also test the dashboard at:
+- Desktop width
+- Laptop width
+- Smaller responsive width
+
+Verify:
+- No content is hidden behind sidebar.
+- No horizontal overflow.
+- Header works.
+- Sidebar works.
+- Main content is fully visible.
+- Chat UI is fully visible.
+
+If you encounter errors during testing, FIX THEM instead of stopping.
+
+==================================================
+FINAL REQUIREMENT
+==================================================
+
+Do not stop after creating a plan.
+
+Inspect → implement → run → test → diagnose → fix → retest.
+
+Only consider this task complete when:
+A) the dashboard layout is correctly responsive and nothing is clipped/hidden, AND
+B) the AI chat successfully returns real AI-generated responses.
