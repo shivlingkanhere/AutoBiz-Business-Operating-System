@@ -1,0 +1,51 @@
+Continue from the CURRENT AutoBiz project state.
+
+IMPORTANT:
+- Do NOT rebuild the billing/invoice module.
+- Do NOT recreate or change the invoice/invoice_items database schema.
+- Do NOT overwrite completed billing functionality.
+- The Billing/Invoice feature is already working.
+- Invoice data and invoice page are working correctly.
+- ONLY fix the invoice DOWNLOAD issue described below.
+
+CURRENT BUG:
+When I click "Download" on the invoice/billing page:
+- A new blank page/tab opens.
+- The invoice PDF does not download.
+- The blank page appears immediately after clicking Download.
+
+TASK:
+1. Inspect the existing invoice/billing frontend implementation.
+2. Find the exact Download Invoice handler/component/function.
+3. Trace how the invoice PDF is currently generated:
+   - blob
+   - window.open
+   - URL.createObjectURL
+   - browser print
+   - PDF library
+   - API endpoint
+   - or any other existing mechanism.
+4. Reproduce/identify why clicking Download opens a blank page.
+5. Fix ONLY the download behavior while preserving the existing invoice UI and billing functionality.
+6. The Download button must:
+   - generate the existing invoice correctly,
+   - download it as a PDF,
+   - use a sensible filename such as:
+     invoice-<invoice-number>.pdf
+   - NOT open a blank browser page/tab.
+7. If the current implementation uses window.open(), iframe, blob URL, or print(), replace/fix it only if necessary.
+8. Do not change unrelated modules.
+9. Do not modify database schemas or migrations.
+10. Do not change the existing AI architecture/integration.
+11. Run the relevant frontend/backend tests, typecheck, and build after the fix.
+12. If there are errors, fix them and verify the build again.
+
+Before making changes:
+- Inspect the current code and understand the existing implementation.
+- Do not create duplicate invoice/download functionality if one already exists.
+
+At the end, report:
+- Root cause of the blank page.
+- Files changed.
+- Exact fix applied.
+- Test/build result.
