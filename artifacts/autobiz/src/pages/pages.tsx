@@ -127,3 +127,4 @@ export function NotFoundPage() { return <div className="grid min-h-[100dvh] plac
 
 export { AuthPage };
 export { SettingsPage } from './settings';
+export { BillingPage, InvoiceDetailPage, NewInvoicePage } from './billing';

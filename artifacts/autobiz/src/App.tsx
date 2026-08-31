@@ -8,9 +8,12 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import {
   AssistantPage,
+  BillingPage,
   CustomersPage,
   DashboardPage,
   InventoryPage,
+  InvoiceDetailPage,
+  NewInvoicePage,
   LandingPage,
   NotFoundPage,
   ProductsPage,
@@ -144,6 +147,9 @@ function AuthenticatedRoutes() {
   return (
     <Switch>
       <Route path="/dashboard" component={DashboardPage} />
+      <Route path="/billing" component={BillingPage} />
+      <Route path="/billing/new" component={NewInvoicePage} />
+      <Route path="/billing/:id" component={InvoiceDetailPage} />
       <Route path="/sales" component={SalesPage} />
       <Route path="/products" component={ProductsPage} />
       <Route path="/inventory" component={InventoryPage} />

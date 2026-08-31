@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useClerk } from '@clerk/react';
 import {
-  Activity, ArrowUpRight, BarChart3, Boxes, ChevronDown, CircleHelp,
+  Activity, ArrowUpRight, BarChart3, Boxes, ChevronDown, CircleHelp, FileText,
   ClipboardList, LayoutDashboard, Menu, Package, PanelLeftClose, PanelLeftOpen,
   Settings, ShoppingCart, Sparkles, Store, Truck, Users, X,
 } from 'lucide-react';
@@ -16,6 +16,7 @@ const navGroups = [
     items: [
       { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
       { href: '/sales', label: 'Sales', icon: ShoppingCart },
+      { href: '/billing', label: 'Billing', icon: FileText },
       { href: '/products', label: 'Products', icon: Package },
       { href: '/inventory', label: 'Inventory', icon: Boxes },
     ],

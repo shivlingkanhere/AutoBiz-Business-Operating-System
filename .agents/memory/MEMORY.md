@@ -1,0 +1,1 @@
+- [Workspace package declarations](workspace-package-declarations.md) — rebuild composite shared packages after schema edits before dependent typechecks.

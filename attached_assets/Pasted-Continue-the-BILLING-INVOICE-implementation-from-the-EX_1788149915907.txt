@@ -1,0 +1,348 @@
+Continue the BILLING / INVOICE implementation from the EXACT CURRENT STATE:
+
+## CRITICAL — CONTINUE, DO NOT RESTART
+
+The previous Agent implementation stopped because the usage quota was exhausted.
+
+You MUST continue from the existing implementation.
+
+DO NOT:
+
+* restart the Billing implementation
+* recreate invoice/invoice_items schema
+* overwrite completed backend work
+* rebuild unrelated modules
+* create a new project
+* create another API client
+* create another data layer
+* replace the existing architecture
+
+First inspect the CURRENT repository/workspace state and determine exactly what is already implemented.
+
+## ALREADY COMPLETED — PRESERVE
+
+The following Billing backend work is already implemented and MUST be preserved:
+
+* invoice and invoice_items database entities
+* customer snapshots
+* discount and payment totals
+* idempotency
+* sale linking
+* OpenAPI contract
+* generated client/Zod types
+* transactional invoice endpoint
+
+The invoice transaction already:
+
+* creates/reuses customer
+* calculates cents-safe totals
+* validates discount
+* validates payment
+* validates stock
+* persists invoice items
+* creates ONE linked sale
+* decrements stock atomically
+* updates customer balances
+
+DO NOT rebuild this transaction.
+
+## LAST KNOWN STATE
+
+The previous Agent was checking server types and applying the development database schema.
+
+The major remaining work is frontend Billing:
+
+1. Verify database/schema/migrations
+2. Fix TypeScript/schema/API-generation errors if any
+3. Complete generated client/Zod/hooks if incomplete
+4. Build Billing/Create Invoice UI
+5. Customer search/select
+6. Product search/select
+7. Multiple invoice items
+8. Quantity + unit price
+9. Fixed/percentage discount
+10. Live subtotal/discount/grand total
+11. Payment method/status
+12. Professional invoice preview
+13. Save/Finalize using the REAL transactional invoice endpoint
+14. PDF generation/download
+15. Invoice history
+16. View / Download / Print
+17. Verify Sales integration
+18. Verify Inventory reduction
+19. Verify duplicate-save protection
+20. Verify Clerk/business/store permissions
+
+## IMPORTANT ARCHITECTURE RULE
+
+Use the EXISTING project workflow:
+
+OpenAPI
+→ generated client
+→ generated Zod/types
+→ generated React hooks
+→ existing UI
+
+Do NOT create:
+
+* second API client
+* custom duplicate fetch layer
+* duplicate API types
+* duplicate React Query layer
+
+Use the REAL generated invoice hooks.
+
+## BILLING UI
+
+Create a proper Billing/Create Invoice page using the existing UI/design system.
+
+Customer:
+
+* search
+* select
+* reuse/create through existing API where supported
+
+Products:
+
+* search
+* select
+* show stock
+* multiple products
+
+Invoice items:
+
+* product
+* quantity
+* unit price
+* line total
+* remove item
+
+Support multiple invoice lines.
+
+## DISCOUNT
+
+Support:
+
+* no discount
+* fixed discount
+* percentage discount
+
+Live calculation:
+
+Chair × 2 × ₹1500 = ₹3000
+Table × 1 × ₹5000 = ₹5000
+
+Subtotal = ₹8000
+10% discount = ₹800
+Grand Total = ₹7200
+
+Backend remains the source of truth for final totals.
+
+## PAYMENT
+
+Use the existing backend/API contract.
+
+Show:
+
+* payment method
+* payment status
+* amount paid
+* outstanding/balance where supported
+
+Do NOT invent a conflicting payment model.
+
+## SAVE / FINALIZE
+
+Save using the EXISTING transactional `/invoices` endpoint.
+
+Do NOT create a Sale separately from the frontend.
+
+After success:
+
+* show invoice number
+* show invoice details
+* make preview available
+* allow PDF
+* allow Print
+* refresh/invalidate relevant queries
+
+Prevent repeated clicks while submission is pending.
+
+Preserve backend idempotency.
+
+## INVOICE PREVIEW
+
+Create a professional invoice preview containing:
+
+* business/store information
+* invoice number
+* date
+* customer
+* items
+* quantity
+* unit price
+* line total
+* subtotal
+* discount
+* grand total
+* payment details
+* balance/status
+
+Existing saved invoices must use REAL invoice data.
+
+## PDF
+
+Implement PDF generation/download using actual saved invoice data.
+
+PDF must match the invoice preview.
+
+Support:
+
+* Download PDF
+* Print
+
+No fake/static invoice data.
+
+## INVOICE HISTORY
+
+If not already implemented, create Billing/Invoice History using the existing API/hooks.
+
+Show:
+
+* invoice number
+* customer
+* date
+* total
+* payment status
+* invoice status
+
+Actions:
+
+* View
+* Download
+* Print
+
+Include loading, empty and error states.
+
+## SALES + INVENTORY
+
+After invoice creation verify:
+
+ONE invoice
+ONE linked sale
+correct invoice items
+sale total = ₹7200
+correct inventory decrement
+correct customer balance
+
+Never create a second Sale from the frontend.
+
+## SECURITY
+
+Preserve existing:
+
+* Clerk authentication
+* business ownership
+* store ownership
+* role permissions
+* authorization
+
+Users must not access another business/store's invoices, customers, products or sales.
+
+Follow existing project patterns.
+
+## REQUIRED END-TO-END TEST
+
+Test:
+
+Customer:
+Rahul Patil
+
+Chair:
+2 × ₹1500
+
+Table:
+1 × ₹5000
+
+Subtotal:
+₹8000
+
+Discount:
+10%
+
+Expected final:
+₹7200
+
+Verify:
+
+* invoice created
+* invoice number generated
+* customer saved/reused
+* invoice items saved
+* discount correct
+* final = ₹7200
+* PDF works
+* PDF contains real invoice data
+* exactly ONE sale created
+* sale total = ₹7200
+* inventory reduced correctly
+* customer balance/payment state correct
+* invoice appears in history
+* View works
+* Download works
+* Print works
+* refresh works
+* repeated submission does not duplicate sale
+
+Also verify existing Sales, Inventory, Customer and Product functionality still works.
+
+## TESTING
+
+Do not stop at a plan.
+
+Execute:
+
+INSPECT
+→ IMPLEMENT
+→ RUN
+→ TEST
+→ FIX
+→ TEST AGAIN
+
+Run wherever applicable:
+
+* TypeScript
+* database/schema checks
+* migrations
+* API generation
+* frontend build
+* backend build
+* tests
+* lint
+
+Fix errors before moving forward.
+
+## FINAL RULE
+
+Work autonomously until Billing/Invoice is functional END-TO-END.
+
+Do not give me only a plan or progress report.
+
+Do not stop after partial implementation.
+
+Do not ask me to manually complete obvious steps.
+
+Preserve all existing completed work and make only targeted changes required to finish Billing.
+
+At the end report:
+
+1. Features completed
+2. Files changed
+3. Database changes
+4. API/generated client changes
+5. Frontend changes
+6. PDF implementation
+7. Tests/checks run
+8. End-to-end result
+9. Git commit/branch
+10. Remaining genuine issues
