@@ -1,8 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
-@layer theme, base, clerk, components, utilities;
-@import 'tailwindcss';
+
+@import 'tailwindcss' source("../");
 @import '@clerk/themes/shadcn.css';
 @import 'tw-animate-css';
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -146,3 +147,4 @@
 .table-row:hover { background: hsl(var(--secondary) / .55); }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 99px; }
+
