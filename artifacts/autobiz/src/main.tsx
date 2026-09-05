@@ -6,7 +6,10 @@ import { ErrorBoundary } from '@/components/error-boundary';
 
 import './index.css';
 
-setBaseUrl(import.meta.env.VITE_API_URL);
+setBaseUrl(
+  import.meta.env.VITE_API_URL ||
+  'https://autobiz-business-operating-system-8.onrender.com'
+);
 
 createRoot(document.getElementById('root')!, {
   onCaughtError: (error, errorInfo) => {
